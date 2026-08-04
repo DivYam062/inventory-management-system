@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 
+const authRoutes = require("./routes/authRoutes");
+
 const app = express();
 
 // Middleware
@@ -14,5 +16,8 @@ app.get("/", (req, res) => {
     message: "Inventory Management API is running",
   });
 });
+
+// Auth routes
+app.use("/api/auth", authRoutes);
 
 module.exports = app;
