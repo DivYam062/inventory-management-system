@@ -1,4 +1,7 @@
-const authorize = (requiredRole) => {
+const authorize = (requiredRoles) => {
+  // Convert single role to array for consistency
+  const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+
   return (req, res, next) => {
     try {
       // Check if user exists (should be set by authMiddleware)
@@ -9,11 +12,11 @@ const authorize = (requiredRole) => {
         });
       }
 
-      // Check if user has the required role
-      if (req.user.role !== requiredRole) {
+      // Check if user has any of the required roles
+      if (!roles.includes(req.user.role)) {
         return res.status(403).json({
           success: false,
-          message: `Access denied. ${requiredRole} privileges required.`,
+          message: `Access denied. ${roles.join(" or ")} privileges required.`,
         });
       }
 
