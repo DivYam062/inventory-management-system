@@ -4,6 +4,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const supplierRoutes = require("./routes/supplierRoutes");
 
 const app = express();
 
@@ -25,7 +26,10 @@ app.use("/api/auth", authRoutes);
 // User routes (admin only)
 app.use("/api/users", userRoutes);
 
-// Category routes (admin only)
+// Category routes (admin and employee)
 app.use("/api/categories", categoryRoutes);
+
+// Supplier routes (admin and employee)
+app.use("/api/suppliers", supplierRoutes);
 
 module.exports = app;
