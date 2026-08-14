@@ -7,6 +7,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const supplierRoutes = require("./routes/supplierRoutes");
 const productRoutes = require("./routes/productRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
@@ -39,5 +40,8 @@ app.use("/api/products", productRoutes);
 
 // Inventory routes (admin and employee)
 app.use("/api/inventory", inventoryRoutes);
+
+// Dashboard routes (admin and employee)
+app.use("/api/dashboard", dashboardRoutes);
 
 module.exports = app;
