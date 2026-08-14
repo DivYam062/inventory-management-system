@@ -6,6 +6,7 @@ const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const supplierRoutes = require("./routes/supplierRoutes");
 const productRoutes = require("./routes/productRoutes");
+const inventoryRoutes = require("./routes/inventoryRoutes");
 
 const app = express();
 
@@ -35,5 +36,8 @@ app.use("/api/suppliers", supplierRoutes);
 
 // Product routes (admin and employee)
 app.use("/api/products", productRoutes);
+
+// Inventory routes (admin and employee)
+app.use("/api/inventory", inventoryRoutes);
 
 module.exports = app;
