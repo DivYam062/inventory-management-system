@@ -5,6 +5,7 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const supplierRoutes = require("./routes/supplierRoutes");
+const productRoutes = require("./routes/productRoutes");
 
 const app = express();
 
@@ -31,5 +32,8 @@ app.use("/api/categories", categoryRoutes);
 
 // Supplier routes (admin and employee)
 app.use("/api/suppliers", supplierRoutes);
+
+// Product routes (admin and employee)
+app.use("/api/products", productRoutes);
 
 module.exports = app;
