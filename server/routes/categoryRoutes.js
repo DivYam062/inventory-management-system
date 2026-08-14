@@ -13,23 +13,16 @@ const authorize = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// All routes below require authentication and admin/employee privileges
+// All routes below require authentication
 router.use(protect);
-router.use(authorize(["admin", "employee"]));
 
-// Create category
-router.post("/", createCategory);
+// Admin routes - Full CRUD access
+router.post("/", authorize("admin"), createCategory);
+router.put("/:id", authorize("admin"), updateCategory);
+router.delete("/:id", authorize("admin"), deleteCategory);
 
-// Get all categories
-router.get("/", getCategories);
-
-// Get single category by ID
-router.get("/:id", getCategoryById);
-
-// Update category
-router.put("/:id", updateCategory);
-
-// Delete category
-router.delete("/:id", deleteCategory);
+// Admin and Employee routes - Read-only access
+router.get("/", authorize(["admin", "employee"]), getCategories);
+router.get("/:id", authorize(["admin", "employee"]), getCategoryById);
 
 module.exports = router;
