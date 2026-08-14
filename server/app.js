@@ -8,6 +8,7 @@ const supplierRoutes = require("./routes/supplierRoutes");
 const productRoutes = require("./routes/productRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 
@@ -43,5 +44,11 @@ app.use("/api/inventory", inventoryRoutes);
 
 // Dashboard routes (admin and employee)
 app.use("/api/dashboard", dashboardRoutes);
+
+// 404 handler for undefined routes
+app.use(notFound);
+
+// Error handling middleware (must be after all routes)
+app.use(errorHandler);
 
 module.exports = app;
