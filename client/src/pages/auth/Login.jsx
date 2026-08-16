@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { setCredentials } from "../../store/slices/authSlice";
 import { loginUser } from "../../services/authService";
 
@@ -111,6 +111,16 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="font-medium text-blue-600 hover:text-blue-700"
+          >
+            Register here
+          </Link>
+        </p>
       </div>
     </div>
   );
