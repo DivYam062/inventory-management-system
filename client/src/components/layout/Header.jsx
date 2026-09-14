@@ -1,10 +1,10 @@
 import { useSelector } from "react-redux";
 
-const Navbar = () => {
+const Header = () => {
   const { user } = useSelector((state) => state.auth);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white px-6">
       <div>
         <h2 className="text-lg font-semibold text-gray-800">
           Inventory Management
@@ -30,4 +30,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Header;

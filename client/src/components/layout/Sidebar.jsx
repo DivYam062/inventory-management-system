@@ -65,7 +65,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-white">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r bg-white">
       <div className="border-b px-6 py-5">
         <h1 className="text-xl font-bold text-gray-900">
           InventoryHub
@@ -75,7 +75,7 @@ const Sidebar = () => {
         </p>
       </div>
 
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
 
