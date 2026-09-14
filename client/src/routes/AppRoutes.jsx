@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import AdminDashboard from "../pages/admin/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import MainLayout from "../components/layout/MainLayout";
 
@@ -14,7 +15,7 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route
             path="/admin/dashboard"
-            element={<h1>Admin Dashboard</h1>}
+            element={<AdminDashboard />}
           />
 
           <Route

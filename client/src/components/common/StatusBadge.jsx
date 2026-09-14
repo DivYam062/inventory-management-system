@@ -3,6 +3,7 @@ import Badge from "../ui/Badge";
 const STATUS_CONFIG = {
   active: { label: "Active", variant: "green" },
   inactive: { label: "Inactive", variant: "gray" },
+  "in-stock": { label: "In Stock", variant: "green" },
   "low-stock": { label: "Low Stock", variant: "yellow" },
   "out-of-stock": { label: "Out of Stock", variant: "red" },
   "stock-in": { label: "Stock In", variant: "green" },

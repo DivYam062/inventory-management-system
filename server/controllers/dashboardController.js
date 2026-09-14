@@ -9,6 +9,7 @@ const getDashboardStats = async (req, res) => {
   try {
     // Get total counts
     const totalUsers = await User.countDocuments();
+    const totalEmployees = await User.countDocuments({ role: "employee" });
     const totalProducts = await Product.countDocuments();
     const totalCategories = await Category.countDocuments();
     const totalSuppliers = await Supplier.countDocuments();
@@ -43,6 +44,7 @@ const getDashboardStats = async (req, res) => {
       success: true,
       stats: {
         totalUsers,
+        totalEmployees,
         totalProducts,
         totalCategories,
         totalSuppliers,
