@@ -24,6 +24,12 @@ const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 400 };
   }
 
+  // Multer upload errors (e.g. file too large)
+  if (err.name === "MulterError") {
+    const message = err.code === "LIMIT_FILE_SIZE" ? "Image must be smaller than 5MB" : err.message;
+    error = { message, statusCode: 400 };
+  }
+
   // JWT errors
   if (err.name === "JsonWebTokenError") {
     const message = "Invalid token";

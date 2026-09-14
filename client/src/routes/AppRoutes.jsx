@@ -2,6 +2,11 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import AdminDashboard from "../pages/admin/Dashboard";
+import Products from "../pages/products/Products";
+import ProductView from "../pages/products/ProductView";
+import ProductCreate from "../pages/products/ProductCreate";
+import ProductEdit from "../pages/products/ProductEdit";
+import Settings from "../pages/settings/Settings";
 import ProtectedRoute from "./ProtectedRoute";
 import MainLayout from "../components/layout/MainLayout";
 
@@ -35,7 +40,12 @@ const AppRoutes = () => {
 
           <Route
             path="/products"
-            element={<h1>Products</h1>}
+            element={<Products />}
+          />
+
+          <Route
+            path="/products/:id"
+            element={<ProductView />}
           />
 
           <Route
@@ -59,6 +69,21 @@ const AppRoutes = () => {
           <Route
             path="/admin/users"
             element={<h1>Users</h1>}
+          />
+
+          <Route
+            path="/products/create"
+            element={<ProductCreate />}
+          />
+
+          <Route
+            path="/products/:id/edit"
+            element={<ProductEdit />}
+          />
+
+          <Route
+            path="/settings"
+            element={<Settings />}
           />
         </Route>
       </Route>

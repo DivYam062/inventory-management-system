@@ -56,6 +56,11 @@ const productSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
+
+    image: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

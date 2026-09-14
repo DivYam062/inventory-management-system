@@ -10,6 +10,7 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
@@ -17,8 +18,8 @@ const router = express.Router();
 router.use(protect);
 
 // Admin routes - Full CRUD access
-router.post("/", authorize("admin"), createProduct);
-router.put("/:id", authorize("admin"), updateProduct);
+router.post("/", authorize("admin"), upload.single("image"), createProduct);
+router.put("/:id", authorize("admin"), upload.single("image"), updateProduct);
 router.delete("/:id", authorize("admin"), deleteProduct);
 
 // Admin and Employee routes - Read-only access

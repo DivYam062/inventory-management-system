@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -8,6 +9,7 @@ const supplierRoutes = require("./routes/supplierRoutes");
 const productRoutes = require("./routes/productRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -15,6 +17,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded product images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Test route
 app.get("/", (req, res) => {
@@ -44,6 +49,9 @@ app.use("/api/inventory", inventoryRoutes);
 
 // Dashboard routes (admin and employee)
 app.use("/api/dashboard", dashboardRoutes);
+
+// Settings routes (admin and employee read, admin write)
+app.use("/api/settings", settingsRoutes);
 
 // 404 handler for undefined routes
 app.use(notFound);

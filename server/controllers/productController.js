@@ -1,6 +1,17 @@
+const fs = require("fs");
+const path = require("path");
+
 const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Supplier = require("../models/Supplier");
+
+// Best-effort removal of a product's image file from disk (never blocks the response)
+const deleteImageFile = (imagePath) => {
+  if (!imagePath) return;
+
+  const absolutePath = path.join(__dirname, "..", imagePath.replace(/^\//, ""));
+  fs.unlink(absolutePath, () => {});
+};
 
 // Create product
 const createProduct = async (req, res) => {
@@ -45,6 +56,7 @@ const createProduct = async (req, res) => {
       quantity,
       minimumStock,
       status,
+      image: req.file ? `/uploads/products/${req.file.filename}` : null,
     });
 
     // Populate category and supplier for response
@@ -71,6 +83,7 @@ const createProduct = async (req, res) => {
         quantity: product.quantity,
         minimumStock: product.minimumStock,
         status: product.status,
+        image: product.image,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       },
@@ -84,14 +97,61 @@ const createProduct = async (req, res) => {
   }
 };
 
-// Get all products
+// Get all products (supports search, category/stock-status filters, and optional pagination)
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).populate(["category", "supplier"]);
+    const { search, category, stockStatus, page, limit } = req.query;
+
+    const query = {};
+
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.$or = [
+        { name: { $regex: escapedSearch, $options: "i" } },
+        { sku: { $regex: escapedSearch, $options: "i" } },
+      ];
+    }
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (stockStatus === "out-of-stock") {
+      query.quantity = 0;
+    } else if (stockStatus === "low-stock") {
+      query.$expr = {
+        $and: [{ $gt: ["$quantity", 0] }, { $lte: ["$quantity", "$minimumStock"] }],
+      };
+    } else if (stockStatus === "in-stock") {
+      query.$expr = { $gt: ["$quantity", "$minimumStock"] };
+    }
+
+    // Pagination only activates when the caller explicitly asks for it, so
+    // existing callers that fetch the full list (e.g. the dashboard) are unaffected.
+    const shouldPaginate = page !== undefined || limit !== undefined;
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.max(parseInt(limit, 10) || 10, 1);
+
+    let productsQuery = Product.find(query)
+      .populate(["category", "supplier"])
+      .sort({ createdAt: -1 });
+
+    if (shouldPaginate) {
+      productsQuery = productsQuery.skip((pageNum - 1) * limitNum).limit(limitNum);
+    }
+
+    const [products, total] = await Promise.all([
+      productsQuery,
+      Product.countDocuments(query),
+    ]);
 
     return res.status(200).json({
       success: true,
       count: products.length,
+      total,
+      page: shouldPaginate ? pageNum : 1,
+      pages: shouldPaginate ? Math.max(Math.ceil(total / limitNum), 1) : 1,
+      limit: shouldPaginate ? limitNum : total,
       products: products.map(product => ({
         id: product._id,
         name: product.name,
@@ -110,6 +170,7 @@ const getProducts = async (req, res) => {
         quantity: product.quantity,
         minimumStock: product.minimumStock,
         status: product.status,
+        image: product.image,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       })),
@@ -155,6 +216,7 @@ const getProductById = async (req, res) => {
         quantity: product.quantity,
         minimumStock: product.minimumStock,
         status: product.status,
+        image: product.image,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       },
@@ -269,6 +331,15 @@ const updateProduct = async (req, res) => {
       product.status = status;
     }
 
+    // Replace image if a new one was uploaded; clear it if explicitly requested
+    if (req.file) {
+      deleteImageFile(product.image);
+      product.image = `/uploads/products/${req.file.filename}`;
+    } else if (req.body.removeImage === "true") {
+      deleteImageFile(product.image);
+      product.image = null;
+    }
+
     // Save updated product
     await product.save();
 
@@ -296,6 +367,7 @@ const updateProduct = async (req, res) => {
         quantity: product.quantity,
         minimumStock: product.minimumStock,
         status: product.status,
+        image: product.image,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       },
@@ -320,6 +392,8 @@ const deleteProduct = async (req, res) => {
         message: "Product not found",
       });
     }
+
+    deleteImageFile(product.image);
 
     await Product.findByIdAndDelete(req.params.id);
 

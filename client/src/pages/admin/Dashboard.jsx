@@ -23,6 +23,7 @@ import Table from "../../components/ui/Table";
 import { getDashboardStats } from "../../services/dashboardService";
 import { getProducts } from "../../services/productService";
 import { getTransactions } from "../../services/inventoryService";
+import { getStockStatus } from "../../utils/stock";
 
 const STOCK_STATUS_CONFIG = [
   {
@@ -172,13 +173,13 @@ const AdminDashboard = () => {
       .slice(0, 6);
 
     const inStock = products.filter(
-      (product) => product.quantity > product.minimumStock
+      (product) => getStockStatus(product) === "in-stock"
     ).length;
     const lowStock = products.filter(
-      (product) => product.quantity > 0 && product.quantity <= product.minimumStock
+      (product) => getStockStatus(product) === "low-stock"
     ).length;
     const outOfStock = products.filter(
-      (product) => product.quantity === 0
+      (product) => getStockStatus(product) === "out-of-stock"
     ).length;
 
     const attentionProducts = products
@@ -361,7 +362,7 @@ const AdminDashboard = () => {
                   header: "Status",
                   render: (product) => (
                     <StatusBadge
-                      status={product.quantity === 0 ? "out-of-stock" : "low-stock"}
+                      status={getStockStatus(product)}
                     />
                   ),
                 },

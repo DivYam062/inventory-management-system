@@ -8,6 +8,7 @@ import {
   Package,
   Boxes,
   UserCircle,
+  Settings as SettingsIcon,
   LogOut,
 } from "lucide-react";
 import { logout } from "../../store/slices/authSlice";
@@ -58,6 +59,15 @@ const Sidebar = () => {
       path: "/profile",
       icon: UserCircle,
     },
+    ...(isAdmin
+      ? [
+          {
+            name: "Settings",
+            path: "/settings",
+            icon: SettingsIcon,
+          },
+        ]
+      : []),
   ];
 
   const handleLogout = () => {
