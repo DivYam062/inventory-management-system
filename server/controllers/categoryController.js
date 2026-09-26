@@ -1,4 +1,5 @@
 const Category = require("../models/Category");
+const Product = require("../models/Product");
 
 // Create category
 const createCategory = async (req, res) => {
@@ -42,14 +43,46 @@ const createCategory = async (req, res) => {
   }
 };
 
-// Get all categories
+// Get all categories (supports search, status filter, and optional pagination)
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({});
+    const { search, status, page, limit } = req.query;
+
+    const query = {};
+
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.name = { $regex: escapedSearch, $options: "i" };
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    // Pagination only activates when the caller explicitly asks for it, so
+    // existing callers that fetch the full list (e.g. product forms/filters) are unaffected.
+    const shouldPaginate = page !== undefined || limit !== undefined;
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.max(parseInt(limit, 10) || 10, 1);
+
+    let categoriesQuery = Category.find(query).sort({ createdAt: -1 });
+
+    if (shouldPaginate) {
+      categoriesQuery = categoriesQuery.skip((pageNum - 1) * limitNum).limit(limitNum);
+    }
+
+    const [categories, total] = await Promise.all([
+      categoriesQuery,
+      Category.countDocuments(query),
+    ]);
 
     return res.status(200).json({
       success: true,
       count: categories.length,
+      total,
+      page: shouldPaginate ? pageNum : 1,
+      pages: shouldPaginate ? Math.max(Math.ceil(total / limitNum), 1) : 1,
+      limit: shouldPaginate ? limitNum : total,
       categories: categories.map(category => ({
         id: category._id,
         name: category.name,
@@ -176,6 +209,15 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Category not found",
+      });
+    }
+
+    // Prevent deleting a category that products still reference
+    const productCount = await Product.countDocuments({ category: req.params.id });
+    if (productCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete category. It is used by ${productCount} product${productCount === 1 ? "" : "s"}.`,
       });
     }
 

@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import AdminDashboard from "../pages/admin/Dashboard";
+import Categories from "../pages/categories/Categories";
+import CategoryCreate from "../pages/categories/CategoryCreate";
+import CategoryEdit from "../pages/categories/CategoryEdit";
 import Products from "../pages/products/Products";
 import ProductView from "../pages/products/ProductView";
 import ProductCreate from "../pages/products/ProductCreate";
@@ -30,7 +33,7 @@ const AppRoutes = () => {
 
           <Route
             path="/categories"
-            element={<h1>Categories</h1>}
+            element={<Categories />}
           />
 
           <Route
@@ -84,6 +87,16 @@ const AppRoutes = () => {
           <Route
             path="/settings"
             element={<Settings />}
+          />
+
+          <Route
+            path="/categories/create"
+            element={<CategoryCreate />}
+          />
+
+          <Route
+            path="/categories/:id/edit"
+            element={<CategoryEdit />}
           />
         </Route>
       </Route>
