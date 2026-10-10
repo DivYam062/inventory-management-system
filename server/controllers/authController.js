@@ -2,6 +2,7 @@ const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const { ENTITY_STATUS } = require("../config/constants");
 const { buildAuthContext } = require("../services/authContextService");
+const { sendSuccess } = require("../utils/response");
 
 // Login for the Super Admin and all organization users. Emails are globally unique, so the
 // email alone identifies the account (and therefore the organization).
@@ -41,12 +42,7 @@ const loginUser = async (req, res) => {
     return res.status(403).json({ success: false, message: "Your organization is inactive" });
   }
 
-  return res.status(200).json({
-    success: true,
-    message: "Login successful",
-    token: generateToken(user._id),
-    ...auth,
-  });
+  return sendSuccess(res, { token: generateToken(user._id), ...auth });
 };
 
 module.exports = { loginUser };

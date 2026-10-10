@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { LogOut } from "lucide-react";
 import { logout } from "../../store/slices/authSlice";
 import { usePermissions } from "../../hooks/usePermissions";
+import { buildImageUrl } from "../../utils/buildImageUrl";
 import { SYSTEM_NAVIGATION, ORGANIZATION_NAVIGATION } from "../../config/navigation";
 
 const Sidebar = () => {
@@ -24,13 +25,23 @@ const Sidebar = () => {
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r bg-white">
-      <div className="border-b px-6 py-5">
-        <h1 className="text-xl font-bold text-gray-900">
-          InventoryHub
-        </h1>
-        <p className="mt-1 truncate text-xs text-gray-500">
-          {isSuperAdmin ? "System Administration" : organization?.name}
-        </p>
+      <div className="flex items-center gap-3 border-b px-6 py-5">
+        {!isSuperAdmin && organization?.logo && (
+          <img
+            src={buildImageUrl(organization.logo)}
+            alt=""
+            className="h-10 w-10 shrink-0 rounded-lg border border-gray-200 object-cover"
+          />
+        )}
+
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-bold text-gray-900">
+            InventoryHub
+          </h1>
+          <p className="mt-1 truncate text-xs text-gray-500">
+            {isSuperAdmin ? "System Administration" : organization?.name}
+          </p>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">

@@ -1,6 +1,7 @@
 import Modal from "../ui/Modal";
-import Button from "../ui/Button";
 
+// Confirmation prompt built on Modal. `variant` is the Modal variant (danger by default), so a
+// destructive confirmation gets the warning icon, tinted header and a red confirm button.
 const ConfirmDialog = ({
   open,
   onClose,
@@ -15,24 +16,17 @@ const ConfirmDialog = ({
 }) => {
   return (
     <Modal
-      open={open}
-      onClose={onClose}
-      title={title}
+      isOpen={open}
+      onClose={loading ? undefined : onClose}
+      variant={variant}
       size="sm"
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            {cancelLabel}
-          </Button>
-          <Button variant={variant} onClick={onConfirm} loading={loading}>
-            {confirmLabel}
-          </Button>
-        </>
-      }
-    >
-      {message && <p className="text-sm text-gray-600">{message}</p>}
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-    </Modal>
+      headerProps={{ heading: title }}
+      bodyProps={{ content: message, contentDescription: error || undefined }}
+      footerProps={{
+        secondaryButton: { text: cancelLabel, onClick: onClose, disabled: loading },
+        primaryButton: { text: confirmLabel, onClick: onConfirm, loading },
+      }}
+    />
   );
 };
 

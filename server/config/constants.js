@@ -29,7 +29,17 @@ const RESERVED_COMPANY_ROUTES = [
   "login", "logout", "unauthorized", "super-admin", "api", "uploads", "admin", "dashboard", "assets", "static",
 ];
 
+// System default brand colors, used when an organization has useCustomColors turned off.
+// Keep in sync with client/src/utils/branding.js.
+const DEFAULT_BRANDING = {
+  primary: "#2563eb",
+  primaryLight: "#60a5fa",
+  primaryLighter: "#dbeafe",
+  primaryDark: "#1d4ed8",
+};
+
 module.exports = {
+  DEFAULT_BRANDING,
   RESERVED_COMPANY_ROUTES,
   SYSTEM_ROLES,
   ROLE_TYPES,

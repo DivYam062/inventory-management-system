@@ -31,7 +31,7 @@ const Login = () => {
       setLoading(true);
       setError("");
 
-      const data = await loginUser(formData);
+      const { data } = await loginUser(formData);
 
       dispatch(setCredentials(data));
 

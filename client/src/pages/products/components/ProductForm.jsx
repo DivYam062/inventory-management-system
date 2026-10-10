@@ -155,7 +155,7 @@ const ProductForm = ({
             value={values.name}
             onChange={handleChange}
             error={errors.name}
-            required
+            isRequired
             placeholder="e.g. Notebook Set"
           />
           <Input
@@ -164,7 +164,7 @@ const ProductForm = ({
             value={values.sku}
             onChange={handleChange}
             error={errors.sku}
-            required
+            isRequired
             placeholder="e.g. NB-001"
           />
         </div>
@@ -235,7 +235,7 @@ const ProductForm = ({
             value={values.category}
             onChange={handleChange}
             error={errors.category}
-            required
+            isRequired
             placeholder="Select a category"
             options={categories.map((c) => ({ value: c.id, label: c.name }))}
           />
@@ -245,7 +245,7 @@ const ProductForm = ({
             value={values.supplier}
             onChange={handleChange}
             error={errors.supplier}
-            required
+            isRequired
             placeholder="Select a supplier"
             options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
           />
@@ -273,7 +273,7 @@ const ProductForm = ({
             value={values.price}
             onChange={handleChange}
             error={errors.price}
-            required
+            isRequired
           />
           <Input
             label="Quantity"

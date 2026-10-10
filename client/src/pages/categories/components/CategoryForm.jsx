@@ -62,7 +62,7 @@ const CategoryForm = ({
         value={values.name}
         onChange={handleChange}
         error={errors.name}
-        required
+        isRequired
         placeholder="e.g. Stationery"
       />
 

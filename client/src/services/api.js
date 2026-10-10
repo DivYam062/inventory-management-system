@@ -1,5 +1,8 @@
 import axios from "axios";
 
+// Every successful API response is { data, meta }: data is the payload, meta is pagination
+// ({ total_page, page, per_page, current_page }) or null. Services return that envelope as is.
+
 // Fired when the API rejects a stored token, so the app can log the user out
 // (App.jsx listens). An event avoids a circular import between this file and the store.
 export const UNAUTHORIZED_EVENT = "auth:unauthorized";

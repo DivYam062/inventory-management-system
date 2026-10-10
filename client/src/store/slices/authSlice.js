@@ -6,7 +6,8 @@ export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
   async (_, { rejectWithValue }) => {
     try {
-      return await getProfile();
+      const { data } = await getProfile();
+      return data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Session expired"

@@ -38,6 +38,7 @@ const buildAuthContext = async (user) => {
     organization: {
       id: organization._id,
       name: organization.name,
+      logo: organization.logo,
       companyRoute: organization.companyRoute,
       status: organization.status,
     },
