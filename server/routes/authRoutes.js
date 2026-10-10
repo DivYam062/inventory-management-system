@@ -1,22 +1,20 @@
 const express = require("express");
 
-const { registerUser, loginUser } = require("../controllers/authController");
+const { loginUser } = require("../controllers/authController");
 const { getProfile, updateProfile } = require("../controllers/profileController");
 
-const protect = require("../middleware/authMiddleware");
+const authenticate = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Register user
-router.post("/register", registerUser);
-
-// Login user
+// Login (system and organization users). There is no self-registration:
+// organization users are created by their organization, Super Admin by startup seeding.
 router.post("/login", loginUser);
 
-// Get user profile (protected)
-router.get("/profile", protect, getProfile);
+// Current session context (user, organization, permissions)
+router.get("/profile", authenticate, getProfile);
 
-// Update user profile (protected)
-router.put("/profile", protect, updateProfile);
+// Update own name/phone
+router.put("/profile", authenticate, updateProfile);
 
 module.exports = router;

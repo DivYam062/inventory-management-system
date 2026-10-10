@@ -1,115 +1,41 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "../pages/auth/Login";
-import Register from "../pages/auth/Register";
-import AdminDashboard from "../pages/admin/Dashboard";
-import Categories from "../pages/categories/Categories";
-import CategoryCreate from "../pages/categories/CategoryCreate";
-import CategoryEdit from "../pages/categories/CategoryEdit";
-import Products from "../pages/products/Products";
-import ProductView from "../pages/products/ProductView";
-import ProductCreate from "../pages/products/ProductCreate";
-import ProductEdit from "../pages/products/ProductEdit";
-import Settings from "../pages/settings/Settings";
+import Unauthorized from "../pages/errors/Unauthorized";
+import SuperAdminDashboard from "../pages/super-admin/Dashboard";
+import OrganizationDashboard from "../pages/dashboard/OrganizationDashboard";
 import ProtectedRoute from "./ProtectedRoute";
+import GuestRoute from "./GuestRoute";
+import HomeRedirect from "./HomeRedirect";
+import CompanyRoute from "./CompanyRoute";
 import MainLayout from "../components/layout/MainLayout";
 
+// Two separate areas: the system (Super Admin) and the organization (permission-based).
+// Organization feature routes are added per phase, each wrapped with
+// <ProtectedRoute scope="organization" permission={[resource, action]} />.
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route element={<GuestRoute />}>
+        <Route path="/login" element={<Login />} />
+      </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={["admin", "employee"]} />}>
+      <Route element={<ProtectedRoute scope="system" />}>
         <Route element={<MainLayout />}>
-          <Route
-            path="/admin/dashboard"
-            element={<AdminDashboard />}
-          />
-
-          <Route
-            path="/employee/dashboard"
-            element={<h1>Employee Dashboard</h1>}
-          />
-
-          <Route
-            path="/categories"
-            element={<Categories />}
-          />
-
-          <Route
-            path="/suppliers"
-            element={<h1>Suppliers</h1>}
-          />
-
-          <Route
-            path="/products"
-            element={<Products />}
-          />
-
-          <Route
-            path="/products/:id"
-            element={<ProductView />}
-          />
-
-          <Route
-            path="/inventory"
-            element={<h1>Inventory</h1>}
-          />
-
-          <Route
-            path="/profile"
-            element={<h1>Profile</h1>}
-          />
+          <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
         </Route>
       </Route>
 
-      <Route
-        element={<ProtectedRoute allowedRoles={["admin"]} />}
-      >
-        <Route
-          element={<MainLayout />}
-        >
-          <Route
-            path="/admin/users"
-            element={<h1>Users</h1>}
-          />
-
-          <Route
-            path="/products/create"
-            element={<ProductCreate />}
-          />
-
-          <Route
-            path="/products/:id/edit"
-            element={<ProductEdit />}
-          />
-
-          <Route
-            path="/settings"
-            element={<Settings />}
-          />
-
-          <Route
-            path="/categories/create"
-            element={<CategoryCreate />}
-          />
-
-          <Route
-            path="/categories/:id/edit"
-            element={<CategoryEdit />}
-          />
+      <Route element={<ProtectedRoute scope="organization" />}>
+        <Route path="/:companyRoute" element={<CompanyRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="dashboard" element={<OrganizationDashboard />} />
+          </Route>
         </Route>
       </Route>
 
-      <Route
-        path="/unauthorized"
-        element={<h1>Unauthorized</h1>}
-      />
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
-      <Route
-        path="*"
-        element={<Navigate to="/login" replace />}
-      />
+      <Route path="*" element={<HomeRedirect />} />
     </Routes>
   );
 };

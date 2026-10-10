@@ -2,14 +2,13 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
-import { fetchCurrentUser } from "./store/slices/authSlice";
-import { fetchSettings } from "./store/slices/settingsSlice";
+import { fetchCurrentUser, logout } from "./store/slices/authSlice";
+import { UNAUTHORIZED_EVENT } from "./services/api";
 import LoadingState from "./components/common/LoadingState";
 
 function App() {
   const dispatch = useDispatch();
   const { token, user, isInitializing } = useSelector((state) => state.auth);
-  const settingsLoaded = useSelector((state) => state.settings.loaded);
 
   useEffect(() => {
     if (token && !user) {
@@ -17,11 +16,13 @@ function App() {
     }
   }, [token, user, dispatch]);
 
+  // The API rejected the stored token (expired, user/organization deactivated): sign out.
   useEffect(() => {
-    if (token && !settingsLoaded) {
-      dispatch(fetchSettings());
-    }
-  }, [token, settingsLoaded, dispatch]);
+    const handleUnauthorized = () => dispatch(logout());
+
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, [dispatch]);
 
   if (isInitializing) {
     return (

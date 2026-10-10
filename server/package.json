@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
     "start": "nodemon server.js",
     "dev": "nodemon server.js"
   },
@@ -22,6 +22,7 @@
     "multer": "^2.3.0"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^11.3.0",
     "nodemon": "^3.1.14"
   }
 }

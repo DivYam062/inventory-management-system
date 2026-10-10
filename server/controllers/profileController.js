@@ -1,67 +1,29 @@
-const User = require("../models/User");
+const { serializeUser } = require("../services/authContextService");
 
-// Get user profile
+// Current session context (used by the client to restore a session from a stored token).
 const getProfile = async (req, res) => {
-  try {
-    const user = req.user;
-
-    return res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    ...req.auth,
+  });
 };
 
-// Update user profile
+// Users may update their own display name and phone. Email, role and organization
+// are never editable here.
 const updateProfile = async (req, res) => {
-  try {
-    const user = req.user;
-    const { name, phone } = req.body;
+  const { name, phone } = req.body;
+  const user = req.user;
 
-    // Update fields (email is not allowed to be changed)
-    if (name !== undefined) {
-      user.name = name;
-    }
-    if (phone !== undefined) {
-      user.phone = phone || undefined;
-    }
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone || undefined;
 
-    // Save updated user
-    await user.save();
+  await user.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "Profile updated successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    user: serializeUser(user, req.auth.user.role),
+  });
 };
 
-module.exports = {
-  getProfile,
-  updateProfile,
-};
+module.exports = { getProfile, updateProfile };

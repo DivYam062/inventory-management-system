@@ -42,7 +42,8 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Default error
-  const statusCode = error.statusCode || 500;
+  // notFound() sets res.statusCode to 404 before forwarding; honour it instead of defaulting to 500.
+  const statusCode = error.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
   const message = error.message || "Internal server error";
 
   return res.status(statusCode).json({

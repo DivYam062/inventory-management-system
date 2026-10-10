@@ -3,13 +3,7 @@ const cors = require("cors");
 const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const supplierRoutes = require("./routes/supplierRoutes");
-const productRoutes = require("./routes/productRoutes");
-const inventoryRoutes = require("./routes/inventoryRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
+const systemRoutes = require("./routes/systemRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -29,29 +23,15 @@ app.get("/", (req, res) => {
   });
 });
 
-// Auth routes
+// Auth routes (login, session profile)
 app.use("/api/auth", authRoutes);
 
-// User routes (admin only)
-app.use("/api/users", userRoutes);
+// System routes (Super Admin only)
+app.use("/api/system", systemRoutes);
 
-// Category routes (admin and employee)
-app.use("/api/categories", categoryRoutes);
-
-// Supplier routes (admin and employee)
-app.use("/api/suppliers", supplierRoutes);
-
-// Product routes (admin and employee)
-app.use("/api/products", productRoutes);
-
-// Inventory routes (admin and employee)
-app.use("/api/inventory", inventoryRoutes);
-
-// Dashboard routes (admin and employee)
-app.use("/api/dashboard", dashboardRoutes);
-
-// Settings routes (admin and employee read, admin write)
-app.use("/api/settings", settingsRoutes);
+// NOTE: category, supplier, product, inventory, dashboard, settings and user routes were
+// removed from the API in the authorization migration. They are rebuilt organization-scoped
+// and permission-protected in their own phases (see NEW_SYSTEM_FLOW.md).
 
 // 404 handler for undefined routes
 app.use(notFound);

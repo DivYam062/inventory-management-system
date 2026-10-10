@@ -1,45 +1,50 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { ENTITY_STATUS } = require("../config/constants");
+const { buildAuthContext } = require("../services/authContextService");
 
-const protect = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
+const unauthorized = (res, message = "You are not authorized to perform this action.") =>
+  res.status(401).json({ success: false, message });
 
-    // Check whether the authorization header exists
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "You are not authorized to perform this action.",
-      });
-    }
+// Authenticates the bearer token and attaches the authorization context to the request:
+//   req.user            the User document
+//   req.auth            { user, organization, isSuperAdmin, permissions }
+//   req.isSuperAdmin    true only for the system-level Super Admin
+//   req.organizationId  the caller's organization (null for Super Admin) - never taken from client input
+//   req.permissions     { resource: [actions] }
+const authenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-    // Get token from: Bearer TOKEN
-    const token = authHeader.split(" ")[1];
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Find user using the ID stored in the token
-    const user = await User.findById(decoded.userId).select("-password");
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Add logged-in user to the request
-    req.user = user;
-
-    // Continue to the controller
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired token",
-    });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return unauthorized(res);
   }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET);
+  } catch {
+    return unauthorized(res, "Invalid or expired token");
+  }
+
+  const user = await User.findById(decoded.userId);
+
+  if (!user || user.status !== ENTITY_STATUS.ACTIVE) {
+    return unauthorized(res, "User not found or inactive");
+  }
+
+  const auth = await buildAuthContext(user);
+
+  if (!auth || (auth.organization && auth.organization.status !== ENTITY_STATUS.ACTIVE)) {
+    return unauthorized(res, "Your organization or role is no longer available");
+  }
+
+  req.user = user;
+  req.auth = auth;
+  req.isSuperAdmin = auth.isSuperAdmin;
+  req.organizationId = auth.organization ? auth.organization.id : null;
+  req.permissions = auth.permissions;
+
+  next();
 };
 
-module.exports = protect;
+module.exports = authenticate;

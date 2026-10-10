@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux";
 
 const Header = () => {
-  const { user } = useSelector((state) => state.auth);
+  const { user, isSuperAdmin } = useSelector((state) => state.auth);
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white px-6">
@@ -17,8 +17,8 @@ const Header = () => {
             {user?.name}
           </p>
 
-          <p className="text-xs capitalize text-gray-500">
-            {user?.role}
+          <p className="text-xs text-gray-500">
+            {isSuperAdmin ? "Super Admin" : user?.role?.name}
           </p>
         </div>
 

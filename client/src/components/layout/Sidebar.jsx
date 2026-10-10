@@ -1,74 +1,22 @@
 import { NavLink } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  LayoutDashboard,
-  Users,
-  Tags,
-  Truck,
-  Package,
-  Boxes,
-  UserCircle,
-  Settings as SettingsIcon,
-  LogOut,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { logout } from "../../store/slices/authSlice";
+import { usePermissions } from "../../hooks/usePermissions";
+import { SYSTEM_NAVIGATION, ORGANIZATION_NAVIGATION } from "../../config/navigation";
 
 const Sidebar = () => {
-  const { user } = useSelector((state) => state.auth);
+  const organization = useSelector((state) => state.auth.organization);
   const dispatch = useDispatch();
+  const { can, isSuperAdmin } = usePermissions();
 
-  const isAdmin = user?.role === "admin";
+  // Super Admin and organization users have separate navigation; organization items are
+  // additionally filtered by the user's permissions.
+  const menuItems = isSuperAdmin
+    ? SYSTEM_NAVIGATION
+    : ORGANIZATION_NAVIGATION.filter((item) => !item.permission || can(...item.permission));
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      path: isAdmin ? "/admin/dashboard" : "/employee/dashboard",
-      icon: LayoutDashboard,
-    },
-    ...(isAdmin
-      ? [
-          {
-            name: "Users",
-            path: "/admin/users",
-            icon: Users,
-          },
-        ]
-      : []),
-    {
-      name: "Categories",
-      path: "/categories",
-      icon: Tags,
-    },
-    {
-      name: "Suppliers",
-      path: "/suppliers",
-      icon: Truck,
-    },
-    {
-      name: "Products",
-      path: "/products",
-      icon: Package,
-    },
-    {
-      name: "Inventory",
-      path: "/inventory",
-      icon: Boxes,
-    },
-    {
-      name: "Profile",
-      path: "/profile",
-      icon: UserCircle,
-    },
-    ...(isAdmin
-      ? [
-          {
-            name: "Settings",
-            path: "/settings",
-            icon: SettingsIcon,
-          },
-        ]
-      : []),
-  ];
+  const basePath = organization ? `/${organization.companyRoute}` : "";
 
   const handleLogout = () => {
     dispatch(logout());
@@ -80,8 +28,8 @@ const Sidebar = () => {
         <h1 className="text-xl font-bold text-gray-900">
           InventoryHub
         </h1>
-        <p className="mt-1 text-xs capitalize text-gray-500">
-          {user?.role} Panel
+        <p className="mt-1 truncate text-xs text-gray-500">
+          {isSuperAdmin ? "System Administration" : organization?.name}
         </p>
       </div>
 
@@ -92,7 +40,7 @@ const Sidebar = () => {
           return (
             <NavLink
               key={item.path}
-              to={item.path}
+              to={`${basePath}${item.path}`}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                   isActive

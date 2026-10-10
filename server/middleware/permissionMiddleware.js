@@ -1,0 +1,39 @@
+const { isValidPermission } = require("../config/permissions");
+const { hasPermission } = require("../services/permissionService");
+
+const forbidden = (res, message) => res.status(403).json({ success: false, message });
+
+// System-level routes (organization management, system stats). Super Admin only.
+const requireSuperAdmin = (req, res, next) => {
+  if (!req.isSuperAdmin) {
+    return forbidden(res, "Access denied. Super Admin privileges required.");
+  }
+  next();
+};
+
+// Organization-level routes. Super Admin is not an organization user and has no
+// organization data access, so it is rejected here too.
+const requireOrganization = (req, res, next) => {
+  if (req.isSuperAdmin || !req.organizationId) {
+    return forbidden(res, "Access denied. Organization access required.");
+  }
+  next();
+};
+
+// Feature + action check, e.g. requirePermission("purchase-order", "create").
+// Implies requireOrganization. Unknown resource/action pairs fail at startup, not at request time.
+const requirePermission = (resource, action) => {
+  if (!isValidPermission(resource, action)) {
+    throw new Error(`Unknown permission: ${resource}:${action}`);
+  }
+
+  return (req, res, next) =>
+    requireOrganization(req, res, () => {
+      if (!hasPermission(req.permissions, resource, action)) {
+        return forbidden(res, `Access denied. You do not have permission to ${action} ${resource}.`);
+      }
+      next();
+    });
+};
+
+module.exports = { requireSuperAdmin, requireOrganization, requirePermission };

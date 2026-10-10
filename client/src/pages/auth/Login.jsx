@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { setCredentials } from "../../store/slices/authSlice";
 import { loginUser } from "../../services/authService";
+import { getHomePath } from "../../utils/homePath";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -32,18 +33,9 @@ const Login = () => {
 
       const data = await loginUser(formData);
 
-      dispatch(
-        setCredentials({
-          user: data.user,
-          token: data.token,
-        })
-      );
+      dispatch(setCredentials(data));
 
-      if (data.user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/employee/dashboard");
-      }
+      navigate(getHomePath(data));
     } catch (error) {
       setError(
         error.response?.data?.message || "Login failed. Please try again."
@@ -111,16 +103,6 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="font-medium text-blue-600 hover:text-blue-700"
-          >
-            Register here
-          </Link>
-        </p>
       </div>
     </div>
   );

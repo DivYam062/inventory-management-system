@@ -1,12 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getProfile } from "../../services/authService";
 
+// Restores the session context (user, organization, permissions) from a stored token.
 export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
   async (_, { rejectWithValue }) => {
     try {
-      const data = await getProfile();
-      return data.user;
+      return await getProfile();
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Session expired"
@@ -19,10 +19,36 @@ const token = localStorage.getItem("token");
 
 const initialState = {
   user: null,
+  // null for the system-level Super Admin.
+  organization: null,
+  // { resource: [actions] } - empty for Super Admin, who has no organization permissions.
+  permissions: {},
+  isSuperAdmin: false,
   token,
   isAuthenticated: !!token,
-  // True only while we still need to verify a stored token by fetching the user's profile.
+  // True only while we still need to verify a stored token by fetching the session context.
   isInitializing: !!token,
+};
+
+const applyContext = (state, payload) => {
+  state.user = payload.user;
+  state.organization = payload.organization ?? null;
+  state.permissions = payload.permissions ?? {};
+  state.isSuperAdmin = Boolean(payload.isSuperAdmin);
+  state.isAuthenticated = true;
+  state.isInitializing = false;
+};
+
+const clearSession = (state) => {
+  state.user = null;
+  state.organization = null;
+  state.permissions = {};
+  state.isSuperAdmin = false;
+  state.token = null;
+  state.isAuthenticated = false;
+  state.isInitializing = false;
+
+  localStorage.removeItem("token");
 };
 
 const authSlice = createSlice({
@@ -30,41 +56,26 @@ const authSlice = createSlice({
   initialState,
 
   reducers: {
+    // payload: the login response ({ token, user, organization, permissions, isSuperAdmin })
     setCredentials: (state, action) => {
-      const { user, token } = action.payload;
+      applyContext(state, action.payload);
+      state.token = action.payload.token;
 
-      state.user = user;
-      state.token = token;
-      state.isAuthenticated = true;
-      state.isInitializing = false;
-
-      localStorage.setItem("token", token);
+      localStorage.setItem("token", action.payload.token);
     },
 
     logout: (state) => {
-      state.user = null;
-      state.token = null;
-      state.isAuthenticated = false;
-      state.isInitializing = false;
-
-      localStorage.removeItem("token");
+      clearSession(state);
     },
   },
 
   extraReducers: (builder) => {
     builder
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        state.user = action.payload;
-        state.isAuthenticated = true;
-        state.isInitializing = false;
+        applyContext(state, action.payload);
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.isInitializing = false;
-
-        localStorage.removeItem("token");
+        clearSession(state);
       });
   },
 });
