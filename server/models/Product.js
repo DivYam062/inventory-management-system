@@ -1,72 +1,88 @@
 const mongoose = require("mongoose");
+const { ENTITY_STATUS } = require("../config/constants");
+const { CURRENCY_CODES, UNIT_CODES } = require("../config/referenceData");
 
+// A Product is made under a Seller and belongs to a Category. It carries no stock quantity: stock lives
+// in Inventory (putaway and manual adjustments), so every change to it is recorded.
 const productSchema = new mongoose.Schema(
   {
+    // Every product belongs to exactly one organization and is invisible to all others.
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: [true, "Organization is required"],
+      index: true,
+    },
+
     name: {
       type: String,
       required: [true, "Product name is required"],
       trim: true,
+      maxlength: [150, "Product name must be at most 150 characters"],
     },
 
+    // Stock keeping unit, stored uppercase. Unique per organization, ignoring case.
     sku: {
       type: String,
       required: [true, "SKU is required"],
-      unique: true,
       trim: true,
       uppercase: true,
+      maxlength: [50, "SKU must be at most 50 characters"],
     },
 
     description: {
       type: String,
       trim: true,
+      maxlength: [1000, "Description must be at most 1000 characters"],
     },
 
-    category: {
+    categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
       required: [true, "Category is required"],
+      index: true,
     },
 
-    supplier: {
+    sellerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Supplier",
-      required: [true, "Supplier is required"],
+      ref: "Seller",
+      required: [true, "Seller is required"],
+      index: true,
     },
 
+    // Unit price. Optional; when set it has a currency (a code from GET /api/currencies).
     price: {
       type: Number,
-      required: [true, "Price is required"],
       min: [0, "Price cannot be negative"],
     },
 
-    quantity: {
-      type: Number,
-      default: 0,
-      min: [0, "Quantity cannot be negative"],
-    },
-
-    minimumStock: {
-      type: Number,
-      default: 5,
-      min: [0, "Minimum stock cannot be negative"],
-    },
-
-    status: {
+    currency: {
       type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+      enum: { values: CURRENCY_CODES, message: "Invalid currency" },
     },
 
+    // Unit of measurement the product is stocked, bought and counted in (a code from GET /api/units).
+    unit: {
+      type: String,
+      required: [true, "Unit of measurement is required"],
+      enum: { values: UNIT_CODES, message: "Invalid unit of measurement" },
+    },
+
+    // Public path of the uploaded image (e.g. "/uploads/products/123.png"), or null. Optional.
     image: {
       type: String,
       default: null,
     },
+
+    status: {
+      type: String,
+      enum: Object.values(ENTITY_STATUS),
+      default: ENTITY_STATUS.ACTIVE,
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-const Product = mongoose.model("Product", productSchema);
+productSchema.index({ organizationId: 1, sku: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
 
-module.exports = Product;
+module.exports = mongoose.model("Product", productSchema);

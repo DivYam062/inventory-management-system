@@ -1,311 +1,223 @@
-import { useEffect, useRef, useState } from "react";
-import { ImageIcon, Upload, X } from "lucide-react";
+import { useState } from "react";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
-import Button from "../../../components/ui/Button";
+import Toggle from "../../../components/ui/Toggle";
+import ImageUpload from "../../../components/ui/ImageUpload";
+import { RESTRICTIONS } from "../../../utils/inputRestrictions";
 import { buildImageUrl } from "../../../utils/buildImageUrl";
 
-const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
+export const PRODUCT_FORM_ID = "product-form";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-const FormSection = ({ title, description, children }) => (
-  <div className="border-b border-gray-100 pb-8 last:border-b-0 last:pb-0">
-    <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-    {description && <p className="mt-0.5 text-sm text-gray-500">{description}</p>}
-    <div className="mt-5 space-y-5">{children}</div>
-  </div>
-);
-
-const buildInitialValues = (initialValues) => ({
-  name: initialValues?.name || "",
-  sku: initialValues?.sku || "",
-  description: initialValues?.description || "",
-  category: initialValues?.category?.id || "",
-  supplier: initialValues?.supplier?.id || "",
-  price: initialValues?.price ?? "",
-  quantity: initialValues?.quantity ?? 0,
-  minimumStock: initialValues?.minimumStock ?? 5,
-  status: initialValues?.status || "active",
-});
-
+// Create / edit form for a product. Rendered inside a Modal; the modal footer's submit button targets this
+// form through PRODUCT_FORM_ID. Category and seller are required and loaded from the API when their
+// dropdown is opened (active ones only, 40 at a time). The image is optional.
 const ProductForm = ({
-  initialValues,
-  categories,
-  suppliers,
-  currency = "INR",
+  product,
+  loadCategoryOptions,
+  loadSellerOptions,
+  loadCurrencyOptions,
+  loadUnitOptions,
   onSubmit,
-  onCancel,
-  submitting = false,
   apiError = "",
-  submitLabel = "Save Product",
 }) => {
-  const [values, setValues] = useState(() => buildInitialValues(initialValues));
+  const [values, setValues] = useState(() => ({
+    name: product?.name ?? "",
+    sku: product?.sku ?? "",
+    categoryId: product?.category?.id ?? "",
+    sellerId: product?.seller?.id ?? "",
+    price: product?.price !== undefined && product?.price !== null ? String(product.price) : "",
+    currency: product?.currency ?? "",
+    unit: product?.unit ?? "",
+    description: product?.description ?? "",
+    status: product?.status ?? "active",
+  }));
+  const [image, setImage] = useState({ file: null, removed: false });
   const [errors, setErrors] = useState({});
 
-  const fileInputRef = useRef(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(
-    initialValues?.image ? buildImageUrl(initialValues.image) : null
-  );
-  const [removeImage, setRemoveImage] = useState(false);
-  const [imageError, setImageError] = useState("");
+  // The saved category / seller may not be in the first page of the dropdown (or may be inactive now), so
+  // their labels are supplied up front.
+  const initialCategoryOptions = product?.category ? [{ value: product.category.id, label: product.category.name }] : [];
+  const initialCurrencyOptions = product?.currency ? [{ value: product.currency, label: product.currency }] : [];
+  const initialUnitOptions = product?.unit ? [{ value: product.unit, label: product.unit }] : [];
+  const initialSellerOptions = product?.seller ? [{ value: product.seller.id, label: product.seller.name }] : [];
 
-  // Release object URLs created for local previews once they're replaced or unmounted.
-  useEffect(() => {
-    return () => {
-      if (imagePreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setValues((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setValues((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) => ({ ...previous, [name]: undefined }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setImageError("Please choose a JPEG, PNG, WEBP or GIF image.");
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      setImageError("Image must be smaller than 5MB.");
-      return;
-    }
-
-    setImageError("");
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setRemoveImage(false);
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setRemoveImage(true);
-    setImageError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const validate = () => {
     const nextErrors = {};
-
     if (!values.name.trim()) nextErrors.name = "Product name is required";
     if (!values.sku.trim()) nextErrors.sku = "SKU is required";
-    if (!values.category) nextErrors.category = "Category is required";
-    if (!values.supplier) nextErrors.supplier = "Supplier is required";
-
-    if (values.price === "" || Number.isNaN(Number(values.price)) || Number(values.price) < 0) {
-      nextErrors.price = "Enter a valid price";
+    else if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(values.sku.trim())) {
+      nextErrors.sku = "SKU can only contain letters, numbers and . _ / -";
     }
-    if (values.quantity !== "" && (Number.isNaN(Number(values.quantity)) || Number(values.quantity) < 0)) {
-      nextErrors.quantity = "Enter a valid quantity";
-    }
-    if (
-      values.minimumStock !== "" &&
-      (Number.isNaN(Number(values.minimumStock)) || Number(values.minimumStock) < 0)
-    ) {
-      nextErrors.minimumStock = "Enter a valid minimum stock";
-    }
+    if (!values.categoryId) nextErrors.categoryId = "Select a category";
+    if (!values.sellerId) nextErrors.sellerId = "Select a seller";
+    if (!values.unit) nextErrors.unit = "Select a unit of measurement";
+    if (values.price.trim() && !values.currency) nextErrors.currency = "Select a currency for the price";
 
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
+    if (Object.keys(nextErrors).length > 0) return;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    onSubmit({
+    const payload = {
       name: values.name.trim(),
       sku: values.sku.trim(),
+      categoryId: values.categoryId,
+      sellerId: values.sellerId,
+      price: values.price.trim(),
+      currency: values.price.trim() ? values.currency : "",
+      unit: values.unit,
       description: values.description.trim(),
-      category: values.category,
-      supplier: values.supplier,
-      price: Number(values.price),
-      quantity: Number(values.quantity),
-      minimumStock: Number(values.minimumStock),
       status: values.status,
-      imageFile,
-      removeImage,
-    });
+    };
+
+    if (image.file) payload.imageFile = image.file;
+    if (image.removed && product?.image) payload.removeImage = true;
+
+    onSubmit(payload);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl space-y-8">
+    <form id={PRODUCT_FORM_ID} onSubmit={handleSubmit} noValidate className="space-y-5">
       {apiError && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{apiError}</div>
+        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {apiError}
+        </div>
       )}
 
-      <FormSection title="Basic Information" description="Identify this product in your catalog.">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Input
-            label="Product Name"
-            name="name"
-            value={values.name}
-            onChange={handleChange}
-            error={errors.name}
-            isRequired
-            placeholder="e.g. Notebook Set"
-          />
-          <Input
-            label="SKU"
-            name="sku"
-            value={values.sku}
-            onChange={handleChange}
-            error={errors.sku}
-            isRequired
-            placeholder="e.g. NB-001"
-          />
-        </div>
+      <ImageUpload
+        label="Product Image"
+        initialUrl={buildImageUrl(product?.image)}
+        onChange={setImage}
+        maxSizeMB={5}
+        helperText="Optional. JPEG, PNG, WEBP or GIF. Max 5MB."
+      />
 
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <Input
+          label="Product Name"
+          name="name"
+          value={values.name}
+          onChange={handleChange}
+          error={errors.name}
+          isRequired
+          maxLength={150}
+          placeholder="e.g. Claw Hammer"
+        />
+        <Input
+          label="SKU"
+          name="sku"
+          value={values.sku}
+          onChange={handleChange}
+          error={errors.sku}
+          isRequired
+          maxLength={50}
+          placeholder="e.g. HAM-001"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <Select
+          label="Category"
+          name="categoryId"
+          value={values.categoryId}
+          onChange={handleChange}
+          isAsync
+          loadOptions={loadCategoryOptions}
+          initialOptions={initialCategoryOptions}
+          error={errors.categoryId}
+          isRequired
+          placeholder="Select a category"
+          noOptionsText="No active categories found"
+        />
+        <Select
+          label="Seller"
+          name="sellerId"
+          value={values.sellerId}
+          onChange={handleChange}
+          isAsync
+          loadOptions={loadSellerOptions}
+          initialOptions={initialSellerOptions}
+          error={errors.sellerId}
+          isRequired
+          placeholder="Select a seller"
+          noOptionsText="No active sellers found"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <Select
+          label="Unit of Measurement"
+          name="unit"
+          value={values.unit}
+          onChange={handleChange}
+          isAsync
+          loadOptions={loadUnitOptions}
+          initialOptions={initialUnitOptions}
+          error={errors.unit}
+          isRequired
+          placeholder="Select a unit"
+          noOptionsText="No units found"
+        />
+        <Input
+          label="Price"
+          name="price"
+          restrictions={[{ name: RESTRICTIONS.DECIMAL, upto: 2 }, { name: RESTRICTIONS.MAX_LENGTH, max: 12 }]}
+          value={values.price}
+          onChange={handleChange}
+          placeholder="Optional"
+        />
+        <Select
+          label="Currency"
+          name="currency"
+          value={values.currency}
+          onChange={handleChange}
+          isAsync
+          loadOptions={loadCurrencyOptions}
+          initialOptions={initialCurrencyOptions}
+          error={errors.currency}
+          isRequired={Boolean(values.price.trim())}
+          isClearable
+          placeholder="Select a currency"
+          noOptionsText="No currencies found"
+        />
+      </div>
+
+      <Input
+        label="Description"
+        name="description"
+        type="textarea"
+        rows={3}
+        value={values.description}
+        onChange={handleChange}
+        maxLength={1000}
+        placeholder="Optional"
+      />
+
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-4 py-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={values.description}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Optional product description"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
-      </FormSection>
-
-      <FormSection title="Product Image" description="Optional. Shown in the product list and details.">
-        <div className="flex items-center gap-5">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Product preview" className="h-full w-full object-cover" />
-            ) : (
-              <ImageIcon size={28} className="text-gray-300" />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPTED_IMAGE_TYPES.join(",")}
-              onChange={handleImageChange}
-              className="hidden"
-            />
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                icon={Upload}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {imagePreview ? "Change Image" : "Upload Image"}
-              </Button>
-
-              {imagePreview && (
-                <Button type="button" variant="ghost" size="sm" icon={X} onClick={handleRemoveImage}>
-                  Remove
-                </Button>
-              )}
-            </div>
-
-            <p className="text-xs text-gray-500">JPEG, PNG, WEBP or GIF. Max 5MB.</p>
-            {imageError && <p className="text-xs text-red-600">{imageError}</p>}
-          </div>
-        </div>
-      </FormSection>
-
-      <FormSection title="Classification" description="Link this product to a category and supplier.">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Select
-            label="Category"
-            name="category"
-            value={values.category}
-            onChange={handleChange}
-            error={errors.category}
-            isRequired
-            placeholder="Select a category"
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-          />
-          <Select
-            label="Supplier"
-            name="supplier"
-            value={values.supplier}
-            onChange={handleChange}
-            error={errors.supplier}
-            isRequired
-            placeholder="Select a supplier"
-            options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
-          />
+          <p className="text-sm font-medium text-gray-900">Product status</p>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {values.status === "active"
+              ? "Active - available when creating purchase orders."
+              : "Inactive - kept on record but not offered when choosing a product."}
+          </p>
         </div>
 
-        <div className="sm:w-56">
-          <Select
-            label="Status"
-            name="status"
-            value={values.status}
-            onChange={handleChange}
-            options={STATUS_OPTIONS}
-          />
-        </div>
-      </FormSection>
-
-      <FormSection title="Pricing & Stock" description="Set the price and track available quantity.">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <Input
-            label={`Price (${currency})`}
-            name="price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={values.price}
-            onChange={handleChange}
-            error={errors.price}
-            isRequired
-          />
-          <Input
-            label="Quantity"
-            name="quantity"
-            type="number"
-            min="0"
-            step="1"
-            value={values.quantity}
-            onChange={handleChange}
-            error={errors.quantity}
-          />
-          <Input
-            label="Minimum Stock"
-            name="minimumStock"
-            type="number"
-            min="0"
-            step="1"
-            value={values.minimumStock}
-            onChange={handleChange}
-            error={errors.minimumStock}
-            helperText="Triggers the low-stock status"
-          />
-        </div>
-      </FormSection>
-
-      <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-6">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button type="submit" loading={submitting}>
-          {submitLabel}
-        </Button>
+        <Toggle
+          label={values.status === "active" ? "Active" : "Inactive"}
+          name="status"
+          isChecked={values.status === "active"}
+          onChange={(event) =>
+            handleChange({ target: { name: "status", value: event.target.checked ? "active" : "inactive" } })
+          }
+          className="shrink-0"
+        />
       </div>
     </form>
   );

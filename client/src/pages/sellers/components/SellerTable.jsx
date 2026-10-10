@@ -46,6 +46,12 @@ const SellerTable = ({ sellers, loading, canEdit, togglingId, onToggleStatus, on
       render: (seller) => <span className="tabular-nums text-gray-700">{seller.supplierCount ?? 0}</span>,
     },
     {
+      key: "productCount",
+      header: "Products",
+      className: "text-right",
+      render: (seller) => <span className="tabular-nums text-gray-700">{seller.productCount ?? 0}</span>,
+    },
+    {
       key: "status",
       header: "Status",
       render: (seller) => <StatusBadge status={seller.status} />,
@@ -80,11 +86,13 @@ const SellerTable = ({ sellers, loading, canEdit, togglingId, onToggleStatus, on
                 <button
                   type="button"
                   onClick={() => onDelete(seller)}
-                  disabled={seller.supplierCount > 0}
+                  disabled={seller.supplierCount > 0 || seller.productCount > 0}
                   title={
                     seller.supplierCount > 0
                       ? `${seller.supplierCount} supplier${seller.supplierCount === 1 ? "" : "s"} work under this seller`
-                      : "Delete seller"
+                      : seller.productCount > 0
+                        ? `${seller.productCount} product${seller.productCount === 1 ? " is" : "s are"} made under this seller`
+                        : "Delete seller"
                   }
                   aria-label={`Delete ${seller.name}`}
                   className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"

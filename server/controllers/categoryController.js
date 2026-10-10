@@ -27,8 +27,8 @@ const isValidStatus = (status) => Object.values(ENTITY_STATUS).includes(status);
 // How many products use each of the given categories.
 const countProductsByCategory = async (categoryIds) => {
   const counts = await Product.aggregate([
-    { $match: { category: { $in: categoryIds } } },
-    { $group: { _id: "$category", count: { $sum: 1 } } },
+    { $match: { categoryId: { $in: categoryIds } } },
+    { $group: { _id: "$categoryId", count: { $sum: 1 } } },
   ]);
   return new Map(counts.map((c) => [String(c._id), c.count]));
 };
@@ -153,7 +153,7 @@ const deleteCategory = async (req, res) => {
   if (!category) return fail(res, 404, "Category not found");
 
   // A category that products still use cannot be deleted.
-  const productCount = await Product.countDocuments({ category: category._id });
+  const productCount = await Product.countDocuments({ categoryId: category._id });
   if (productCount > 0) {
     return fail(
       res,

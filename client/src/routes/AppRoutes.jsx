@@ -8,6 +8,8 @@ import Roles from "../pages/settings/Roles";
 import Users from "../pages/settings/Users";
 import Profile from "../pages/profile/Profile";
 import Categories from "../pages/categories/Categories";
+import Products from "../pages/products/Products";
+import Configuration from "../pages/settings/Configuration";
 import Sellers from "../pages/sellers/Sellers";
 import Suppliers from "../pages/suppliers/Suppliers";
 import ModulePlaceholder from "../pages/shared/ModulePlaceholder";
@@ -28,8 +30,10 @@ import {
 const ORGANIZATION_PAGES = {
   "/dashboard": OrganizationDashboard,
   "/catalog/categories": Categories,
+  "/catalog/products": Products,
   "/seller/sellers": Sellers,
   "/seller/suppliers": Suppliers,
+  "/settings/configuration": Configuration,
   "/settings/roles": Roles,
   "/settings/users": Users,
 };

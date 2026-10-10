@@ -10,6 +10,9 @@ const roleRoutes = require("./routes/roleRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const sellerRoutes = require("./routes/sellerRoutes");
 const supplierRoutes = require("./routes/supplierRoutes");
+const productRoutes = require("./routes/productRoutes");
+const referenceRoutes = require("./routes/referenceRoutes");
+const configurationRoutes = require("./routes/configurationRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -44,7 +47,7 @@ app.use("/api/users", userRoutes);
 // Organization roles and permissions
 app.use("/api/roles", roleRoutes);
 
-// Catalog: categories (products follow)
+// Catalog: categories
 app.use("/api/categories", categoryRoutes);
 
 // Sellers (the external organizations products and purchase orders are made against)
@@ -53,7 +56,16 @@ app.use("/api/sellers", sellerRoutes);
 // Suppliers (people who work for a seller; one seller at a time)
 app.use("/api/suppliers", supplierRoutes);
 
-// NOTE: product, inventory, dashboard and settings routes were
+// Catalog: products (made under a seller, belong to a category, optional image)
+app.use("/api/products", productRoutes);
+
+// Organization configuration (enabled currencies and units)
+app.use("/api/configuration", configurationRoutes);
+
+// Reference lists: /api/currencies, /api/units
+app.use("/api", referenceRoutes);
+
+// NOTE: inventory, dashboard and settings routes were
 // removed from the API in the authorization migration. They are rebuilt organization-scoped
 // and permission-protected in their own phases (see NEW_SYSTEM_FLOW.md).
 

@@ -7,6 +7,7 @@ const { ensureSupportUsers } = require("./services/supportUserService");
 const migrateDeletePermission = require("./utils/migrateDeletePermission");
 const Category = require("./models/Category");
 const Supplier = require("./models/Supplier");
+const Product = require("./models/Product");
 
 const PORT = process.env.PORT || 5000;
 
@@ -33,6 +34,13 @@ const startServer = async () => {
     await Supplier.syncIndexes();
   } catch (error) {
     console.error(`Supplier index sync failed: ${error.message}`);
+  }
+
+  // Products were globally unique by SKU; they are now unique per organization.
+  try {
+    await Product.syncIndexes();
+  } catch (error) {
+    console.error(`Product index sync failed: ${error.message}`);
   }
 
   // Roles saved with the old separate Delete permission are converted to Edit.

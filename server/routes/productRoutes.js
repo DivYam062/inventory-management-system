@@ -8,22 +8,22 @@ const {
   deleteProduct,
 } = require("../controllers/productController");
 
-const protect = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const authenticate = require("../middleware/authMiddleware");
+const { requirePermission } = require("../middleware/permissionMiddleware");
+const { createImageUpload } = require("../middleware/uploadMiddleware");
+
+const uploadImage = createImageUpload("products", { maxSizeMB: 5 }).single("image");
 
 const router = express.Router();
 
-// All routes below require authentication
-router.use(protect);
+// Organization products. Permissions: view, create, edit. "edit" also covers deleting a product and
+// switching it active/inactive. Create and update accept multipart form data (optional "image" file).
+router.use(authenticate);
 
-// Admin routes - Full CRUD access
-router.post("/", authorize("admin"), upload.single("image"), createProduct);
-router.put("/:id", authorize("admin"), upload.single("image"), updateProduct);
-router.delete("/:id", authorize("admin"), deleteProduct);
-
-// Admin and Employee routes - Read-only access
-router.get("/", authorize(["admin", "employee"]), getProducts);
-router.get("/:id", authorize(["admin", "employee"]), getProductById);
+router.get("/", requirePermission("product", "view"), getProducts);
+router.get("/:id", requirePermission("product", "view"), getProductById);
+router.post("/", requirePermission("product", "create"), uploadImage, createProduct);
+router.put("/:id", requirePermission("product", "edit"), uploadImage, updateProduct);
+router.delete("/:id", requirePermission("product", "edit"), deleteProduct);
 
 module.exports = router;
