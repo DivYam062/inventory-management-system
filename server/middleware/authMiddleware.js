@@ -32,6 +32,12 @@ const authenticate = async (req, res, next) => {
     return unauthorized(res, "User not found or inactive");
   }
 
+  // A password change signs out every session that started before it (tokens issued before the
+  // version existed count as version 0).
+  if ((decoded.tv ?? 0) !== (user.tokenVersion ?? 0)) {
+    return unauthorized(res, "Your password was changed. Please sign in again.");
+  }
+
   const auth = await buildAuthContext(user);
 
   if (!auth || (auth.organization && auth.organization.status !== ENTITY_STATUS.ACTIVE)) {

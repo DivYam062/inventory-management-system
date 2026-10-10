@@ -42,7 +42,7 @@ const loginUser = async (req, res) => {
     return res.status(403).json({ success: false, message: "Your organization is inactive" });
   }
 
-  return sendSuccess(res, { token: generateToken(user._id), ...auth });
+  return sendSuccess(res, { token: generateToken(user._id, user.tokenVersion), ...auth });
 };
 
 module.exports = { loginUser };

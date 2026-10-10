@@ -5,6 +5,11 @@ const { ENTITY_STATUS, ROLE_TYPES } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { ensureDefaultRoles } = require("../services/roleService");
 const { deleteUploadedFile } = require("../middleware/uploadMiddleware");
+const {
+  SUPPORT_NOT_CONFIGURED_MESSAGE,
+  getSupportCredentials,
+  createSupportUser,
+} = require("../services/supportUserService");
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -66,9 +71,10 @@ const emailTakenByUser = async (email) => {
 const MIN_ADMIN_PASSWORD_LENGTH = 8;
 const MAX_ADMIN_PASSWORD_LENGTH = 72; // bcrypt ignores anything beyond 72 bytes
 
-// Creates the organization with its protected Default Admin. The admin's login is the
-// organization email and the initial password is the one the Super Admin enters here; the
-// Default Admin changes it themselves later.
+// Creates the organization with its two protected users:
+//   - the Default Admin: login = the organization email, initial password = the one the Super Admin
+//     enters here (the Default Admin changes it themselves later);
+//   - the Support user: name/password from .env, email derived per organization (see supportUserService).
 const createOrganization = async (req, res) => {
   const { name, companyRoute, email, phone, address, branding, password } = req.body;
   const logo = uploadedLogoPath(req);
@@ -92,6 +98,17 @@ const createOrganization = async (req, res) => {
 
   if (await emailTakenByUser(email)) {
     return reject(400, "A user with this email already exists");
+  }
+
+  // The Support user's address depends on the company route, so check it before creating anything.
+  const supportCredentials = getSupportCredentials(String(companyRoute ?? "").trim().toLowerCase());
+  if (!supportCredentials) return reject(500, SUPPORT_NOT_CONFIGURED_MESSAGE);
+
+  if (
+    supportCredentials.email === String(email ?? "").trim().toLowerCase() ||
+    (await emailTakenByUser(supportCredentials.email))
+  ) {
+    return reject(400, `A user with the Support email (${supportCredentials.email}) already exists`);
   }
 
   let organization;
@@ -122,13 +139,15 @@ const createOrganization = async (req, res) => {
       roleId: roles[ROLE_TYPES.DEFAULT_ADMIN]._id,
       isProtected: true,
     });
+
+    await createSupportUser(organization, roles, supportCredentials);
   } catch (error) {
     // No partial organizations: undo everything created so far (including the logo file).
     await deleteOrganizationData(organization);
     throw error;
   }
 
-  return sendSuccess(res, serializeOrganization(organization, 1), { status: 201 });
+  return sendSuccess(res, serializeOrganization(organization, 2), { status: 201 });
 };
 
 const getOrganizations = async (req, res) => {

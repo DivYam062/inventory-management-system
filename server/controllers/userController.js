@@ -1,161 +1,256 @@
+const mongoose = require("mongoose");
+
 const User = require("../models/User");
+const Role = require("../models/Role");
+const { ROLE_TYPES, ENTITY_STATUS } = require("../config/constants");
+const { sendSuccess, buildMeta } = require("../utils/response");
+const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { resolvePermissions, isSubsetOf } = require("../services/permissionService");
 
-// Get all users
+// Organization user management. Every query is scoped to the caller's organization
+// (req.organizationId); the organization is never read from the request body.
+//
+// Rules enforced here (the UI only mirrors them):
+//   - Default Admin and Support users (isProtected) cannot be edited, deactivated or deleted.
+//   - Only CUSTOM roles can be assigned (the Default Admin / Support roles belong to the system users).
+//   - Nobody can assign a role, or manage a user whose role, has more permissions than their own.
+//   - You cannot change your own role or status, or delete yourself.
+//   - Email is globally unique and can never be changed after the user is created.
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 72; // bcrypt ignores anything beyond 72 bytes
+
+const isValidPassword = (password) =>
+  typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH;
+
+const fail = (res, status, message) => res.status(status).json({ success: false, message });
+
+const sameId = (a, b) => String(a) === String(b);
+
+// `role` is the populated Role document (or null when it no longer exists).
+const serializeUser = (user, role, req) => {
+  const isSelf = sameId(user._id, req.user._id);
+
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    status: user.status,
+    isProtected: user.isProtected,
+    role: role ? { id: role._id, name: role.name, type: role.type } : null,
+    isSelf,
+    // Hierarchy check: not protected, and the caller holds every permission of this user's role. The UI
+    // combines it with the caller's own user:edit permission to show or hide the actions.
+    canManage: !user.isProtected && isSubsetOf(resolvePermissions(role), req.permissions),
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+};
+
+// Loads a role from the caller's organization. Anything else (bad id, other organization) is "not found".
+const loadOrganizationRole = (req, roleId) => {
+  if (!mongoose.isValidObjectId(roleId)) return null;
+  return Role.findOne(orgFilter(req, { _id: roleId }));
+};
+
+// Returns an error message when the caller may not assign this role, otherwise null.
+const roleAssignmentError = (req, role) => {
+  if (!role) return "Role not found";
+
+  if (role.type !== ROLE_TYPES.CUSTOM) {
+    return "The Default Admin and Support roles cannot be assigned to users";
+  }
+
+  if (!isSubsetOf(resolvePermissions(role), req.permissions)) {
+    return "You cannot assign a role with more permissions than your own";
+  }
+
+  return null;
+};
+
+// Loads the user a request targets (inside the organization) together with their role, and checks that
+// the caller may modify them. Returns { user, role } or sends the error response and returns null.
+const loadManageableUser = async (req, res) => {
+  const user = await findByIdInOrg(User, req, req.params.id);
+
+  if (!user) {
+    fail(res, 404, "User not found");
+    return null;
+  }
+
+  if (user.isProtected) {
+    fail(res, 403, "The Default Admin and Support users cannot be modified");
+    return null;
+  }
+
+  const role = await Role.findOne(orgFilter(req, { _id: user.roleId }));
+
+  if (!isSubsetOf(resolvePermissions(role), req.permissions)) {
+    fail(res, 403, "You cannot manage a user who has more permissions than you");
+    return null;
+  }
+
+  return { user, role };
+};
+
+// Roles the caller may give to a user (used by the create/edit form's role dropdown).
+const getAssignableRoles = async (req, res) => {
+  const roles = await Role.find(orgFilter(req, { type: ROLE_TYPES.CUSTOM })).sort({ name: 1 });
+
+  const assignable = roles.filter((role) => isSubsetOf(resolvePermissions(role), req.permissions));
+
+  return sendSuccess(
+    res,
+    assignable.map((role) => ({ id: role._id, name: role.name, type: role.type }))
+  );
+};
+
 const getUsers = async (req, res) => {
-  try {
-    const users = await User.find({}).select("-password");
+  const { search, status, roleId, page, limit } = req.query;
 
-    return res.status(200).json({
-      success: true,
-      count: users.length,
-      users: users.map(user => ({
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      })),
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+  const query = orgFilter(req);
+
+  if (typeof search === "string" && search.trim()) {
+    const pattern = { $regex: escapeRegex(search.trim()), $options: "i" };
+    query.$or = [{ name: pattern }, { email: pattern }];
   }
+
+  if (Object.values(ENTITY_STATUS).includes(status)) {
+    query.status = status;
+  }
+
+  if (typeof roleId === "string" && mongoose.isValidObjectId(roleId)) {
+    query.roleId = roleId;
+  }
+
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .populate("roleId")
+      .sort({ isProtected: -1, createdAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum),
+    User.countDocuments(query),
+  ]);
+
+  return sendSuccess(
+    res,
+    users.map((user) => serializeUser(user, user.roleId, req)),
+    { meta: buildMeta({ page: pageNum, limit: limitNum, total }) }
+  );
 };
 
-// Get single user by ID
 const getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select("-password");
+  const user = await findByIdInOrg(User, req, req.params.id).populate("roleId");
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+  if (!user) return fail(res, 404, "User not found");
 
-    return res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
+  return sendSuccess(res, serializeUser(user, user.roleId, req));
 };
 
-// Update user (admin only)
+const createUser = async (req, res) => {
+  const { name, email, phone, password, roleId, status } = req.body;
+
+  if (!isValidPassword(password)) {
+    return fail(res, 400, `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters`);
+  }
+
+  if (status !== undefined && !Object.values(ENTITY_STATUS).includes(status)) {
+    return fail(res, 400, "Invalid status. Status must be either 'active' or 'inactive'");
+  }
+
+  const role = await loadOrganizationRole(req, roleId);
+  const roleError = roleAssignmentError(req, role);
+  if (roleError) return fail(res, 400, roleError);
+
+  // organizationId always comes from the caller, isProtected is never client-controlled.
+  const user = await User.create({
+    name,
+    email,
+    phone: phone || undefined,
+    password,
+    roleId: role._id,
+    organizationId: req.organizationId,
+    status,
+  });
+
+  return sendSuccess(res, serializeUser(user, role, req), { status: 201 });
+};
+
 const updateUser = async (req, res) => {
-  try {
-    const { name, email, phone, role } = req.body;
+  const { name, email, phone, roleId, status, password } = req.body;
 
-    const user = await User.findById(req.params.id);
+  const loaded = await loadManageableUser(req, res);
+  if (!loaded) return;
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+  const { user } = loaded;
 
-    // Update fields
-    if (name !== undefined) {
-      user.name = name;
-    }
-    if (email !== undefined) {
-      user.email = email;
-    }
-    if (phone !== undefined) {
-      user.phone = phone || undefined;
-    }
-    if (role !== undefined) {
-      // Validate role
-      if (!["admin", "employee"].includes(role)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid role. Role must be either 'admin' or 'employee'",
-        });
-      }
-      user.role = role;
-    }
-
-    // Save updated user
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "User updated successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+  // Email is the login and can never be changed (sending the current one back is fine).
+  if (email !== undefined && String(email).trim().toLowerCase() !== user.email) {
+    return fail(res, 400, "Email cannot be changed");
   }
+  let { role } = loaded;
+  const isSelf = sameId(user._id, req.user._id);
+
+  if (status !== undefined && !Object.values(ENTITY_STATUS).includes(status)) {
+    return fail(res, 400, "Invalid status. Status must be either 'active' or 'inactive'");
+  }
+
+  if (password !== undefined && !isValidPassword(password)) {
+    return fail(res, 400, `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters`);
+  }
+
+  const changesRole = roleId !== undefined && !sameId(roleId, user.roleId);
+  const changesStatus = status !== undefined && status !== user.status;
+
+  if (isSelf && (changesRole || changesStatus)) {
+    return fail(res, 403, "You cannot change your own role or status");
+  }
+
+  if (changesRole) {
+    const newRole = await loadOrganizationRole(req, roleId);
+    const roleError = roleAssignmentError(req, newRole);
+    if (roleError) return fail(res, 400, roleError);
+
+    user.roleId = newRole._id;
+    role = newRole;
+  }
+
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone || undefined;
+  if (changesStatus) user.status = status;
+  if (password !== undefined) user.password = password;
+
+  await user.save();
+
+  return sendSuccess(res, serializeUser(user, role, req));
 };
 
-// Delete user (admin only)
 const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
+  const loaded = await loadManageableUser(req, res);
+  if (!loaded) return;
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+  const { user } = loaded;
 
-    // Prevent admin from deleting themselves
-    if (user._id.toString() === req.user._id.toString()) {
-      return res.status(400).json({
-        success: false,
-        message: "You cannot delete your own account",
-      });
-    }
-
-    await User.findByIdAndDelete(req.params.id);
-
-    return res.status(200).json({
-      success: true,
-      message: "User deleted successfully",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+  if (sameId(user._id, req.user._id)) {
+    return fail(res, 403, "You cannot delete your own account");
   }
+
+  await User.deleteOne({ _id: user._id });
+
+  return sendSuccess(res, { id: user._id });
 };
 
 module.exports = {
+  getAssignableRoles,
   getUsers,
   getUserById,
+  createUser,
   updateUser,
   deleteUser,
 };

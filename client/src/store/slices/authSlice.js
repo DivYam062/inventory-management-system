@@ -65,6 +65,17 @@ const authSlice = createSlice({
       localStorage.setItem("token", action.payload.token);
     },
 
+    // After the user edits their own profile (name / phone).
+    updateUser: (state, action) => {
+      state.user = action.payload;
+    },
+
+    // After a password change: the server issues a fresh token and signs older sessions out.
+    updateToken: (state, action) => {
+      state.token = action.payload;
+      localStorage.setItem("token", action.payload);
+    },
+
     logout: (state) => {
       clearSession(state);
     },
@@ -81,6 +92,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, updateUser, updateToken, logout } = authSlice.actions;
 
 export default authSlice.reducer;

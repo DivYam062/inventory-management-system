@@ -332,7 +332,7 @@ const OrganizationForm = ({ organization, onSubmit, apiError = "" }) => {
       {!isEdit && (
         <FormSection
           title="Default Admin"
-          description="The organization's administrator signs in with the email above and this password. They can change it after signing in."
+          description="The organization's administrator signs in with the email above and this password. They can change it after signing in. A protected Support user is created for the organization automatically."
         >
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Input

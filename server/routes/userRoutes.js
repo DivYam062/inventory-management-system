@@ -1,26 +1,30 @@
 const express = require("express");
 
-const { getUsers, getUserById, updateUser, deleteUser } = require("../controllers/userController");
+const {
+  getAssignableRoles,
+  getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
+} = require("../controllers/userController");
 
-const protect = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
+const authenticate = require("../middleware/authMiddleware");
+const { requirePermission, requireAnyPermission } = require("../middleware/permissionMiddleware");
 
 const router = express.Router();
 
-// All routes below require authentication and admin privileges
-router.use(protect);
-router.use(authorize("admin"));
+// Organization users. User permissions: view, create, edit. "edit" also covers deleting a user and
+// switching them active/inactive.
+router.use(authenticate);
 
-// Get all users
-router.get("/", getUsers);
+// Roles the caller may assign (for the role dropdown). Needed by anyone who can create or edit users.
+router.get("/assignable-roles", requireAnyPermission([["user", "create"], ["user", "edit"]]), getAssignableRoles);
 
-// Get single user by ID
-router.get("/:id", getUserById);
-
-// Update user
-router.put("/:id", updateUser);
-
-// Delete user
-router.delete("/:id", deleteUser);
+router.get("/", requirePermission("user", "view"), getUsers);
+router.get("/:id", requirePermission("user", "view"), getUserById);
+router.post("/", requirePermission("user", "create"), createUser);
+router.put("/:id", requirePermission("user", "edit"), updateUser);
+router.delete("/:id", requirePermission("user", "edit"), deleteUser);
 
 module.exports = router;

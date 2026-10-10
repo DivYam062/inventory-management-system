@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Email is required"],
       lowercase: true,
       trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Enter a valid email address"],
     },
 
     // Hashed automatically on save (see pre-save hook). Never selected by default.
@@ -49,6 +50,10 @@ const userSchema = new mongoose.Schema(
       ref: "Role",
       default: null,
     },
+
+    // Goes up by one whenever an existing user's password changes. Every token carries the version it was
+    // issued under, so a password change signs out all earlier sessions.
+    tokenVersion: { type: Number, default: 0 },
 
     // System-created organization users (Default Admin, Support) cannot be edited or deleted.
     isProtected: {
@@ -92,6 +97,7 @@ userSchema.pre("validate", function () {
 userSchema.pre("save", async function () {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
+    if (!this.isNew) this.tokenVersion = (this.tokenVersion ?? 0) + 1;
   }
 });
 

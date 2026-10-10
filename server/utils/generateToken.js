@@ -1,9 +1,11 @@
 const jwt = require("jsonwebtoken");
 
-const generateToken = (userId) => {
+// tokenVersion ties the token to the user's current password (see User.tokenVersion).
+const generateToken = (userId, tokenVersion = 0) => {
   return jwt.sign(
     {
       userId,
+      tv: tokenVersion,
     },
     process.env.JWT_SECRET,
     {

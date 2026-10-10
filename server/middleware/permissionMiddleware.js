@@ -36,4 +36,21 @@ const requirePermission = (resource, action) => {
     });
 };
 
-module.exports = { requireSuperAdmin, requireOrganization, requirePermission };
+// Passes when the user holds at least one of the given [resource, action] pairs.
+const requireAnyPermission = (pairs) => {
+  pairs.forEach(([resource, action]) => {
+    if (!isValidPermission(resource, action)) {
+      throw new Error(`Unknown permission: ${resource}:${action}`);
+    }
+  });
+
+  return (req, res, next) =>
+    requireOrganization(req, res, () => {
+      if (!pairs.some(([resource, action]) => hasPermission(req.permissions, resource, action))) {
+        return forbidden(res, "Access denied. You do not have permission to do this.");
+      }
+      next();
+    });
+};
+
+module.exports = { requireSuperAdmin, requireOrganization, requirePermission, requireAnyPermission };
