@@ -9,6 +9,7 @@ import Users from "../pages/settings/Users";
 import Profile from "../pages/profile/Profile";
 import Categories from "../pages/categories/Categories";
 import Sellers from "../pages/sellers/Sellers";
+import Suppliers from "../pages/suppliers/Suppliers";
 import ModulePlaceholder from "../pages/shared/ModulePlaceholder";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
@@ -28,6 +29,7 @@ const ORGANIZATION_PAGES = {
   "/dashboard": OrganizationDashboard,
   "/catalog/categories": Categories,
   "/seller/sellers": Sellers,
+  "/seller/suppliers": Suppliers,
   "/settings/roles": Roles,
   "/settings/users": Users,
 };

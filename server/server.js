@@ -6,6 +6,7 @@ const createSuperAdmin = require("./utils/createSuperAdmin");
 const { ensureSupportUsers } = require("./services/supportUserService");
 const migrateDeletePermission = require("./utils/migrateDeletePermission");
 const Category = require("./models/Category");
+const Supplier = require("./models/Supplier");
 
 const PORT = process.env.PORT || 5000;
 
@@ -25,6 +26,13 @@ const startServer = async () => {
     await Category.syncIndexes();
   } catch (error) {
     console.error(`Category index sync failed: ${error.message}`);
+  }
+
+  // Same for suppliers (the old model was unique by name; the new one is unique by email per organization).
+  try {
+    await Supplier.syncIndexes();
+  } catch (error) {
+    console.error(`Supplier index sync failed: ${error.message}`);
   }
 
   // Roles saved with the old separate Delete permission are converted to Edit.

@@ -1,4 +1,5 @@
 const Seller = require("../models/Seller");
+const Supplier = require("../models/Supplier");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -14,18 +15,29 @@ const fail = (res, status, message) => res.status(status).json({ success: false,
 const PHONE_PATTERN = /^[\d+\-\s()]*$/;
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
-const serializeSeller = (seller) => ({
+// supplierCount: how many suppliers work under the seller.
+const serializeSeller = (seller, supplierCount) => ({
   id: seller._id,
   name: seller.name,
   email: seller.email,
   phone: seller.phone,
   address: seller.address,
   status: seller.status,
+  supplierCount,
   createdAt: seller.createdAt,
   updatedAt: seller.updatedAt,
 });
 
 const isValidStatus = (status) => Object.values(ENTITY_STATUS).includes(status);
+
+// How many suppliers work under each of the given sellers.
+const countSuppliersBySeller = async (sellerIds) => {
+  const counts = await Supplier.aggregate([
+    { $match: { sellerId: { $in: sellerIds } } },
+    { $group: { _id: "$sellerId", count: { $sum: 1 } } },
+  ]);
+  return new Map(counts.map((c) => [String(c._id), c.count]));
+};
 
 // Returns an error message for a bad seller name, otherwise null.
 const nameError = async (req, name, exceptId) => {
@@ -99,7 +111,7 @@ const createSeller = async (req, res) => {
 
   if (!(await saveSeller(res, seller))) return;
 
-  return sendSuccess(res, serializeSeller(seller), { status: 201 });
+  return sendSuccess(res, serializeSeller(seller, 0), { status: 201 });
 };
 
 const getSellers = async (req, res) => {
@@ -128,7 +140,9 @@ const getSellers = async (req, res) => {
     Seller.countDocuments(query),
   ]);
 
-  return sendSuccess(res, sellers.map(serializeSeller), {
+  const supplierCounts = await countSuppliersBySeller(sellers.map((s) => s._id));
+
+  return sendSuccess(res, sellers.map((s) => serializeSeller(s, supplierCounts.get(String(s._id)) || 0)), {
     meta: buildMeta({ page: pageNum, limit: limitNum, total }),
   });
 };
@@ -137,7 +151,9 @@ const getSellerById = async (req, res) => {
   const seller = await findByIdInOrg(Seller, req, req.params.id);
   if (!seller) return fail(res, 404, "Seller not found");
 
-  return sendSuccess(res, serializeSeller(seller));
+  const supplierCounts = await countSuppliersBySeller([seller._id]);
+
+  return sendSuccess(res, serializeSeller(seller, supplierCounts.get(String(seller._id)) || 0));
 };
 
 const updateSeller = async (req, res) => {
@@ -172,14 +188,25 @@ const updateSeller = async (req, res) => {
 
   if (!(await saveSeller(res, seller))) return;
 
-  return sendSuccess(res, serializeSeller(seller));
+  const supplierCounts = await countSuppliersBySeller([seller._id]);
+
+  return sendSuccess(res, serializeSeller(seller, supplierCounts.get(String(seller._id)) || 0));
 };
 
-// A seller that other records depend on (suppliers, products, purchase orders) must not be deleted:
-// each of those modules adds its own check here when it is built.
+// A seller that other records depend on must not be deleted. Suppliers are checked here; products and
+// purchase orders add their own check when those modules are built.
 const deleteSeller = async (req, res) => {
   const seller = await findByIdInOrg(Seller, req, req.params.id);
   if (!seller) return fail(res, 404, "Seller not found");
+
+  const supplierCount = await Supplier.countDocuments({ sellerId: seller._id });
+  if (supplierCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this seller. ${supplierCount} supplier${supplierCount === 1 ? " works" : "s work"} under it. Unassign or delete them first.`
+    );
+  }
 
   await Seller.deleteOne({ _id: seller._id });
 

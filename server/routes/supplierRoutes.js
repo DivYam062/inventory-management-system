@@ -5,24 +5,26 @@ const {
   getSuppliers,
   getSupplierById,
   updateSupplier,
+  assignSupplier,
+  unassignSupplier,
   deleteSupplier,
 } = require("../controllers/supplierController");
 
-const protect = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
+const authenticate = require("../middleware/authMiddleware");
+const { requirePermission } = require("../middleware/permissionMiddleware");
 
 const router = express.Router();
 
-// All routes below require authentication
-router.use(protect);
+// Organization suppliers. Permissions: view, create, edit. "edit" also covers assigning / unassigning a
+// supplier, deleting it and switching it active/inactive.
+router.use(authenticate);
 
-// Admin routes - Full CRUD access
-router.post("/", authorize("admin"), createSupplier);
-router.put("/:id", authorize("admin"), updateSupplier);
-router.delete("/:id", authorize("admin"), deleteSupplier);
-
-// Admin and Employee routes - Read-only access
-router.get("/", authorize(["admin", "employee"]), getSuppliers);
-router.get("/:id", authorize(["admin", "employee"]), getSupplierById);
+router.get("/", requirePermission("supplier", "view"), getSuppliers);
+router.get("/:id", requirePermission("supplier", "view"), getSupplierById);
+router.post("/", requirePermission("supplier", "create"), createSupplier);
+router.put("/:id", requirePermission("supplier", "edit"), updateSupplier);
+router.post("/:id/assign", requirePermission("supplier", "edit"), assignSupplier);
+router.post("/:id/unassign", requirePermission("supplier", "edit"), unassignSupplier);
+router.delete("/:id", requirePermission("supplier", "edit"), deleteSupplier);
 
 module.exports = router;
