@@ -8,6 +8,7 @@ const organizationRoutes = require("./routes/organizationRoutes");
 const userRoutes = require("./routes/userRoutes");
 const roleRoutes = require("./routes/roleRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const sellerRoutes = require("./routes/sellerRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -44,6 +45,9 @@ app.use("/api/roles", roleRoutes);
 
 // Catalog: categories (products follow)
 app.use("/api/categories", categoryRoutes);
+
+// Sellers (the external organizations products and purchase orders are made against)
+app.use("/api/sellers", sellerRoutes);
 
 // NOTE: supplier, product, inventory, dashboard and settings routes were
 // removed from the API in the authorization migration. They are rebuilt organization-scoped
