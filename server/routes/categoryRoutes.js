@@ -8,21 +8,19 @@ const {
   deleteCategory,
 } = require("../controllers/categoryController");
 
-const protect = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
+const authenticate = require("../middleware/authMiddleware");
+const { requirePermission } = require("../middleware/permissionMiddleware");
 
 const router = express.Router();
 
-// All routes below require authentication
-router.use(protect);
+// Organization categories. Permissions: view, create, edit. "edit" also covers deleting a category and
+// switching it active/inactive.
+router.use(authenticate);
 
-// Admin routes - Full CRUD access
-router.post("/", authorize("admin"), createCategory);
-router.put("/:id", authorize("admin"), updateCategory);
-router.delete("/:id", authorize("admin"), deleteCategory);
-
-// Admin and Employee routes - Read-only access
-router.get("/", authorize(["admin", "employee"]), getCategories);
-router.get("/:id", authorize(["admin", "employee"]), getCategoryById);
+router.get("/", requirePermission("category", "view"), getCategories);
+router.get("/:id", requirePermission("category", "view"), getCategoryById);
+router.post("/", requirePermission("category", "create"), createCategory);
+router.put("/:id", requirePermission("category", "edit"), updateCategory);
+router.delete("/:id", requirePermission("category", "edit"), deleteCategory);
 
 module.exports = router;

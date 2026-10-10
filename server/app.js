@@ -7,6 +7,7 @@ const systemRoutes = require("./routes/systemRoutes");
 const organizationRoutes = require("./routes/organizationRoutes");
 const userRoutes = require("./routes/userRoutes");
 const roleRoutes = require("./routes/roleRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -41,7 +42,10 @@ app.use("/api/users", userRoutes);
 // Organization roles and permissions
 app.use("/api/roles", roleRoutes);
 
-// NOTE: category, supplier, product, inventory, dashboard and settings routes were
+// Catalog: categories (products follow)
+app.use("/api/categories", categoryRoutes);
+
+// NOTE: supplier, product, inventory, dashboard and settings routes were
 // removed from the API in the authorization migration. They are rebuilt organization-scoped
 // and permission-protected in their own phases (see NEW_SYSTEM_FLOW.md).
 

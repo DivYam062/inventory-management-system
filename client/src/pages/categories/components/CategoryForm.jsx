@@ -1,47 +1,34 @@
 import { useState } from "react";
 import Input from "../../../components/ui/Input";
-import Select from "../../../components/ui/Select";
-import Button from "../../../components/ui/Button";
+import Toggle from "../../../components/ui/Toggle";
 
-const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
+export const CATEGORY_FORM_ID = "category-form";
 
-const buildInitialValues = (initialValues) => ({
-  name: initialValues?.name || "",
-  description: initialValues?.description || "",
-  status: initialValues?.status || "active",
-});
+// Create / edit form for a category. Rendered inside a Modal; the modal footer's submit button targets
+// this form through CATEGORY_FORM_ID.
+const CategoryForm = ({ category, onSubmit, apiError = "" }) => {
+  const isEdit = Boolean(category);
 
-const CategoryForm = ({
-  initialValues,
-  onSubmit,
-  onCancel,
-  submitting = false,
-  apiError = "",
-  submitLabel = "Save Category",
-}) => {
-  const [values, setValues] = useState(() => buildInitialValues(initialValues));
+  const [values, setValues] = useState(() => ({
+    name: category?.name ?? "",
+    description: category?.description ?? "",
+    status: category?.status ?? "active",
+  }));
   const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setValues((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setValues((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) => ({ ...previous, [name]: undefined }));
   };
 
-  const validate = () => {
-    const nextErrors = {};
-    if (!values.name.trim()) nextErrors.name = "Category name is required";
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+    if (!values.name.trim()) {
+      setErrors({ name: "Category name is required" });
+      return;
+    }
 
     onSubmit({
       name: values.name.trim(),
@@ -51,9 +38,11 @@ const CategoryForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl space-y-5">
+    <form id={CATEGORY_FORM_ID} onSubmit={handleSubmit} noValidate className="space-y-5">
       {apiError && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{apiError}</div>
+        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {apiError}
+        </div>
       )}
 
       <Input
@@ -63,41 +52,47 @@ const CategoryForm = ({
         onChange={handleChange}
         error={errors.name}
         isRequired
-        placeholder="e.g. Stationery"
+        maxLength={100}
+        placeholder="e.g. Dairy"
       />
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Description
-        </label>
-        <textarea
-          name="description"
-          value={values.description}
-          onChange={handleChange}
-          rows={3}
-          placeholder="Optional category description"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
+      <Input
+        label="Description"
+        name="description"
+        type="textarea"
+        rows={3}
+        value={values.description}
+        onChange={handleChange}
+        maxLength={500}
+        placeholder="Optional"
+      />
 
-      <div className="sm:w-56">
-        <Select
-          label="Status"
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-4 py-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Category status</p>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {values.status === "active"
+              ? "Active - products can be added to this category."
+              : "Inactive - the category is kept but hidden when choosing a category."}
+          </p>
+        </div>
+
+        <Toggle
+          label={values.status === "active" ? "Active" : "Inactive"}
           name="status"
-          value={values.status}
-          onChange={handleChange}
-          options={STATUS_OPTIONS}
+          isChecked={values.status === "active"}
+          onChange={(event) =>
+            handleChange({ target: { name: "status", value: event.target.checked ? "active" : "inactive" } })
+          }
+          className="shrink-0"
         />
       </div>
 
-      <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-5">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button type="submit" loading={submitting}>
-          {submitLabel}
-        </Button>
-      </div>
+      {isEdit && category.productCount > 0 && (
+        <p className="text-xs text-gray-500">
+          Used by {category.productCount} product{category.productCount === 1 ? "" : "s"}.
+        </p>
+      )}
     </form>
   );
 };

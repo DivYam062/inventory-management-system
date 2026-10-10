@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const createSuperAdmin = require("./utils/createSuperAdmin");
 const { ensureSupportUsers } = require("./services/supportUserService");
 const migrateDeletePermission = require("./utils/migrateDeletePermission");
+const Category = require("./models/Category");
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +17,14 @@ const startServer = async () => {
   } catch (error) {
     console.error(`Super Admin setup failed: ${error.message}`);
     process.exit(1);
+  }
+
+  // Categories were globally unique by name; they are now unique per organization. syncIndexes drops the
+  // old index and builds the new one.
+  try {
+    await Category.syncIndexes();
+  } catch (error) {
+    console.error(`Category index sync failed: ${error.message}`);
   }
 
   // Roles saved with the old separate Delete permission are converted to Edit.

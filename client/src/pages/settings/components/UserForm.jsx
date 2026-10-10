@@ -22,10 +22,11 @@ const passwordProblem = (password, confirmPassword) => {
 
 // Create / edit form for an organization user. Rendered inside a Modal; the modal footer's submit button
 // targets this form through USER_FORM_ID.
-//   roles   the roles the current user may assign: [{ id, name }]
+//   loadRoleOptions   loader for the role dropdown (the roles the current user may assign). The dropdown calls
+//                     it only when opened, 40 roles at a time.
 // Editing: the password is optional (leave it blank to keep the current one). A user cannot change their
 // own role or status, so those are locked when editing yourself.
-const UserForm = ({ user, roles, onSubmit, apiError = "" }) => {
+const UserForm = ({ user, loadRoleOptions, onSubmit, apiError = "" }) => {
   const isEdit = Boolean(user);
   const isSelf = Boolean(user?.isSelf);
 
@@ -40,11 +41,8 @@ const UserForm = ({ user, roles, onSubmit, apiError = "" }) => {
   }));
   const [errors, setErrors] = useState({});
 
-  // The user's current role is always selectable, even if the assignable list would not include it.
-  const roleOptions = roles.map((role) => ({ value: role.id, label: role.name }));
-  if (user?.role && !roleOptions.some((option) => option.value === user.role.id)) {
-    roleOptions.unshift({ value: user.role.id, label: user.role.name });
-  }
+  // The user's current role is shown by name even before the dropdown has loaded anything.
+  const currentRoleOption = user?.role ? [{ value: user.role.id, label: user.role.name }] : [];
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -147,19 +145,15 @@ const UserForm = ({ user, roles, onSubmit, apiError = "" }) => {
           name="roleId"
           value={values.roleId}
           onChange={handleChange}
-          options={roleOptions}
+          isAsync
+          loadOptions={loadRoleOptions}
+          initialOptions={currentRoleOption}
           error={errors.roleId}
           isRequired
           isDisabled={isSelf}
           placeholder="Select a role"
-          noOptionsText="No roles available. Create a role first."
-          helperText={
-            isSelf
-              ? "You cannot change your own role."
-              : roleOptions.length === 0
-                ? "Create a role under Settings > Roles first."
-                : undefined
-          }
+          noOptionsText="No roles available. Create a role under Settings > Roles first."
+          helperText={isSelf ? "You cannot change your own role." : undefined}
         />
 
         <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-4 py-3">

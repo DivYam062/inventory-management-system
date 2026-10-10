@@ -1,3 +1,5 @@
+// Organization categories. List: { data: [...], meta } with params { search, status, page, limit }.
+// Each category: { id, name, description, status, productCount }.
 import api from "./api";
 
 export const getCategories = async (params = {}) => {

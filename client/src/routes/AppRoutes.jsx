@@ -7,6 +7,7 @@ import OrganizationDashboard from "../pages/dashboard/OrganizationDashboard";
 import Roles from "../pages/settings/Roles";
 import Users from "../pages/settings/Users";
 import Profile from "../pages/profile/Profile";
+import Categories from "../pages/categories/Categories";
 import ModulePlaceholder from "../pages/shared/ModulePlaceholder";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
@@ -24,6 +25,7 @@ import {
 // placeholder until its module is built: register the real component here (keyed by its path).
 const ORGANIZATION_PAGES = {
   "/dashboard": OrganizationDashboard,
+  "/catalog/categories": Categories,
   "/settings/roles": Roles,
   "/settings/users": Users,
 };

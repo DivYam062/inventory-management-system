@@ -4,7 +4,6 @@ import PageHeader from "../../components/common/PageHeader";
 import ErrorState from "../../components/common/ErrorState";
 import EmptyState from "../../components/common/EmptyState";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
-import LoadingState from "../../components/common/LoadingState";
 import Pagination from "../../components/common/Pagination";
 import SearchBar from "../../components/common/SearchBar";
 import Card from "../../components/ui/Card";
@@ -22,8 +21,12 @@ import {
   deleteUser,
 } from "../../services/userService";
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import { createOptionsLoader } from "../../utils/dropdownLoaders";
 
 const PAGE_SIZE = 10;
+
+// Role dropdowns (the filter and the form) load from the API only when opened, 40 at a time.
+const loadRoleOptions = createOptionsLoader(getAssignableRoles, (role) => ({ value: role.id, label: role.name }));
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Status" },
@@ -47,10 +50,6 @@ const Users = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // The roles this user may assign (role dropdown in the form, and the role filter).
-  const [roles, setRoles] = useState(null);
-  const [rolesError, setRolesError] = useState("");
-
   // formTarget: null = closed, "new" = create form, otherwise the user being edited.
   const [formTarget, setFormTarget] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -65,15 +64,18 @@ const Users = () => {
   const [statusTarget, setStatusTarget] = useState(null);
   const [statusError, setStatusError] = useState("");
 
-  // Debounce the raw search input before it drives the API call.
+  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
+  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
+    if (searchInput === search) return;
+
     const handle = setTimeout(() => {
       setSearch(searchInput);
       setPage(1);
     }, 400);
 
     return () => clearTimeout(handle);
-  }, [searchInput]);
+  }, [searchInput, search]);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -88,6 +90,11 @@ const Users = () => {
         limit: PAGE_SIZE,
       });
 
+      if (data.length === 0 && meta && page > meta.total_page) {
+        setPage(meta.total_page);
+        return;
+      }
+
       setUsers(data);
       setTotalPages(meta?.total_page ?? 1);
     } catch (err) {
@@ -101,24 +108,6 @@ const Users = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-filter-change; no data-fetching library is set up in this project yet
     loadUsers();
   }, [loadUsers]);
-
-  const loadRoles = useCallback(async () => {
-    try {
-      setRolesError("");
-      const { data } = await getAssignableRoles();
-      setRoles(data);
-    } catch (err) {
-      setRolesError(getErrorMessage(err, "Failed to load roles."));
-    }
-  }, []);
-
-  // Only people who can create or edit users may ask for the assignable roles.
-  useEffect(() => {
-    if (canCreate || canEdit) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount; no data-fetching library is set up in this project yet
-      loadRoles();
-    }
-  }, [canCreate, canEdit, loadRoles]);
 
   const handleFilterChange = (setter) => (value) => {
     setter(value);
@@ -138,7 +127,6 @@ const Users = () => {
   const openForm = (target) => {
     setFormError("");
     setFormTarget(target);
-    if (!roles && !rolesError) loadRoles();
   };
 
   const closeForm = () => {
@@ -220,8 +208,6 @@ const Users = () => {
 
   const isEditing = formTarget && formTarget !== "new";
 
-  const roleFilterOptions = [{ value: "", label: "All Roles" }, ...(roles ?? []).map((r) => ({ value: r.id, label: r.name }))];
-
   return (
     <div>
       <PageHeader title="Users" description="Add people to your organization and choose what each one can do." />
@@ -241,13 +227,18 @@ const Users = () => {
             />
           </div>
 
-          {roles && roles.length > 0 && (
+          {/* Only people who can create or edit users may list the assignable roles. */}
+          {(canCreate || canEdit) && (
             <div className="sm:w-52">
               <Select
                 aria-label="Filter by role"
                 value={roleId}
                 onChange={(e) => handleFilterChange(setRoleId)(e.target.value)}
-                options={roleFilterOptions}
+                isAsync
+                loadOptions={loadRoleOptions}
+                isClearable
+                placeholder="All Roles"
+                noOptionsText="No roles found"
               />
             </div>
           )}
@@ -329,24 +320,18 @@ const Users = () => {
             type: "submit",
             form: USER_FORM_ID,
             loading: submitting,
-            disabled: !roles,
           },
         }}
       >
-        {formTarget &&
-          (rolesError ? (
-            <ErrorState message={rolesError} onRetry={loadRoles} />
-          ) : !roles ? (
-            <LoadingState message="Loading roles..." />
-          ) : (
-            <UserForm
-              key={isEditing ? formTarget.id : "new"}
-              user={isEditing ? formTarget : null}
-              roles={roles}
-              onSubmit={handleSubmit}
-              apiError={formError}
-            />
-          ))}
+        {formTarget && (
+          <UserForm
+            key={isEditing ? formTarget.id : "new"}
+            user={isEditing ? formTarget : null}
+            loadRoleOptions={loadRoleOptions}
+            onSubmit={handleSubmit}
+            apiError={formError}
+          />
+        )}
       </Modal>
 
       <ConfirmDialog

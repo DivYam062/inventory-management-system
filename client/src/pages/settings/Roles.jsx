@@ -51,15 +51,18 @@ const Roles = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  // Debounce the raw search input before it drives the API call.
+  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
+  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
+    if (searchInput === search) return;
+
     const handle = setTimeout(() => {
       setSearch(searchInput);
       setPage(1);
     }, 400);
 
     return () => clearTimeout(handle);
-  }, [searchInput]);
+  }, [searchInput, search]);
 
   const loadRoles = useCallback(async () => {
     try {
@@ -67,6 +70,11 @@ const Roles = () => {
       setError("");
 
       const { data, meta } = await getRoles({ search: search || undefined, page, limit: PAGE_SIZE });
+
+      if (data.length === 0 && meta && page > meta.total_page) {
+        setPage(meta.total_page);
+        return;
+      }
 
       setRoles(data);
       setTotalPages(meta?.total_page ?? 1);

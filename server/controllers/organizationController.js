@@ -1,6 +1,7 @@
 const Organization = require("../models/Organization");
 const User = require("../models/User");
 const Role = require("../models/Role");
+const Category = require("../models/Category");
 const { ENTITY_STATUS, ROLE_TYPES } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { ensureDefaultRoles } = require("../services/roleService");
@@ -267,6 +268,7 @@ const updateOrganization = async (req, res) => {
 const deleteOrganizationData = async (organization) => {
   await User.deleteMany({ organizationId: organization._id });
   await Role.deleteMany({ organizationId: organization._id });
+  await Category.deleteMany({ organizationId: organization._id });
   await Organization.deleteOne({ _id: organization._id });
   deleteUploadedFile(organization.logo);
 };

@@ -96,15 +96,33 @@ const loadManageableUser = async (req, res) => {
   return { user, role };
 };
 
-// Roles the caller may give to a user (used by the create/edit form's role dropdown).
-const getAssignableRoles = async (req, res) => {
-  const roles = await Role.find(orgFilter(req, { type: ROLE_TYPES.CUSTOM })).sort({ name: 1 });
+// Roles the caller may give to a user. Feeds role dropdowns, so it is searchable and paginated
+// (default 40 per page): the dropdown loads the next page as the list is scrolled.
+const DROPDOWN_PAGE_SIZE = 40;
 
+const getAssignableRoles = async (req, res) => {
+  const { search, page, limit } = req.query;
+
+  const query = orgFilter(req, { type: ROLE_TYPES.CUSTOM });
+
+  if (typeof search === "string" && search.trim()) {
+    query.name = { $regex: escapeRegex(search.trim()), $options: "i" };
+  }
+
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit, 10) || DROPDOWN_PAGE_SIZE, 1), 100);
+
+  // An organization has few roles, and "assignable" depends on the caller's permissions, so it is
+  // filtered here before paginating.
+  const roles = await Role.find(query).collation({ locale: "en", strength: 2 }).sort({ name: 1 });
   const assignable = roles.filter((role) => isSubsetOf(resolvePermissions(role), req.permissions));
 
   return sendSuccess(
     res,
-    assignable.map((role) => ({ id: role._id, name: role.name, type: role.type }))
+    assignable
+      .slice((pageNum - 1) * limitNum, pageNum * limitNum)
+      .map((role) => ({ id: role._id, name: role.name, type: role.type })),
+    { meta: buildMeta({ page: pageNum, limit: limitNum, total: assignable.length }) }
   );
 };
 

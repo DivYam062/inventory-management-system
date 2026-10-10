@@ -1,8 +1,9 @@
 import api from "./api";
 
-// Roles the current user may assign (for the role dropdown): [{ id, name, type }].
-export const getAssignableRoles = async () => {
-  const response = await api.get("/users/assignable-roles");
+// Roles the current user may assign (for role dropdowns): { data: [{ id, name, type }], meta }.
+// params: { search, page, limit } (40 per page by default).
+export const getAssignableRoles = async (params = {}) => {
+  const response = await api.get("/users/assignable-roles", { params });
   return response.data;
 };
 
