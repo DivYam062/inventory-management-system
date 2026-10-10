@@ -74,7 +74,7 @@ const ImageUpload = ({
       {label && <p className="mb-1 block text-sm font-medium text-gray-700">{label}</p>}
 
       <div className="flex items-center gap-4">
-        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+        <div className="flex h-18 w-18 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
           {preview ? (
             <img src={preview} alt={label ? `${label} preview` : "Preview"} className="h-full w-full object-cover" />
           ) : (
