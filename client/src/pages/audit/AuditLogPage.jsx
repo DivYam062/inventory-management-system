@@ -83,7 +83,7 @@ const StatusChange = ({ entry }) => {
 const Field = ({ label, children }) => (
   <div>
     <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1 text-sm text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
+    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
   </div>
 );
 
@@ -96,7 +96,7 @@ const EntryDetails = ({ entry }) => {
 
   return (
     <div className="space-y-5">
-      <dl className="grid grid-cols-2 gap-4">
+      <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5">
         <Field label="When">{formatDateTime(entry.createdAt)}</Field>
         <Field label="Done by">{entry.performedBy?.name}</Field>
         <Field label="Record">

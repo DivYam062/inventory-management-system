@@ -2,16 +2,16 @@ import StatusBadge from "../../../components/common/StatusBadge";
 import { formatDateTime } from "../../../utils/formatDate";
 
 const Field = ({ label, children }) => (
-  <div>
+  <div className="min-w-0">
     <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1 text-sm text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
+    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
   </div>
 );
 
 // Read-only view of a gate entry (the full entry), shown in a modal.
 const GateEntryDetails = ({ entry }) => (
   <div className="space-y-6">
-    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+    <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-3">
       <Field label="Gate Entry">{entry.gateEntryNumber}</Field>
       <Field label="Status">
         <StatusBadge status={entry.status} />

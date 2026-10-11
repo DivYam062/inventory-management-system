@@ -7,7 +7,7 @@ import { ProductThumbnail } from "./ProductTable";
 const Field = ({ label, children }) => (
   <div>
     <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1 text-sm text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
+    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
   </div>
 );
 
@@ -26,7 +26,7 @@ const ProductDetails = ({ product }) => (
       </div>
     )}
 
-    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-2">
       <Field label="Product Name">{product.name}</Field>
       <Field label="SKU">{product.sku}</Field>
       <Field label="Barcode">{product.barcode}</Field>

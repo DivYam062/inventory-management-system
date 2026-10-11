@@ -2,9 +2,9 @@ import StatusBadge from "../../../components/common/StatusBadge";
 import { formatDateTime } from "../../../utils/formatDate";
 
 const Field = ({ label, children }) => (
-  <div>
+  <div className="min-w-0">
     <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1 text-sm text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
+    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
   </div>
 );
 
@@ -32,7 +32,7 @@ const GrnDetails = ({ grn }) => {
 
   return (
     <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-3">
         <Field label="GRN">{grn.grnNumber}</Field>
         <Field label="Status">
           <StatusBadge status={grn.status} />
@@ -62,19 +62,19 @@ const GrnDetails = ({ grn }) => {
         <table className="w-full min-w-full divide-y divide-gray-200 text-left text-sm">
           <thead className="bg-gray-50">
             <tr className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              <th className="px-4 py-3">Product</th>
-              {hasOrder && <th className="px-4 py-3 text-right">Ordered</th>}
-              <th className="px-4 py-3 text-right">Received</th>
-              {isInspected && <th className="px-4 py-3 text-right">Passed</th>}
-              {isInspected && <th className="px-4 py-3 text-right">Failed</th>}
-              {showPutaway && <th className="px-4 py-3 text-right">Put away</th>}
-              <th className="px-4 py-3">Remarks</th>
+              <th className="whitespace-nowrap px-4 py-3">Product</th>
+              {hasOrder && <th className="whitespace-nowrap px-4 py-3 text-right">Ordered</th>}
+              <th className="whitespace-nowrap px-4 py-3 text-right">Received</th>
+              {isInspected && <th className="whitespace-nowrap px-4 py-3 text-right">Passed</th>}
+              {isInspected && <th className="whitespace-nowrap px-4 py-3 text-right">Failed</th>}
+              {showPutaway && <th className="whitespace-nowrap px-4 py-3 text-right">Put away</th>}
+              <th className="whitespace-nowrap px-4 py-3">Remarks</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {grn.items.map((item) => (
               <tr key={item.id}>
-                <td className="px-4 py-3">
+                <td className="min-w-40 px-4 py-3">
                   <p className="font-medium text-gray-900">{item.product?.name || "—"}</p>
                   <p className="text-xs text-gray-500">{item.product?.sku}</p>
                 </td>
@@ -101,7 +101,7 @@ const GrnDetails = ({ grn }) => {
                     {item.putawayQty} {item.unit}
                   </td>
                 )}
-                <td className="px-4 py-3 text-gray-600">{item.remarks || <span className="text-gray-400">—</span>}</td>
+                <td className="min-w-32 px-4 py-3 text-gray-600">{item.remarks || <span className="text-gray-400">—</span>}</td>
               </tr>
             ))}
           </tbody>

@@ -124,7 +124,7 @@ const Modal = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900/50 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4 sm:p-6"
       onMouseDown={(event) => {
         // Outside click: only when the press started on the overlay itself, so selecting text in
         // a field and releasing outside the dialog does not close it.
@@ -138,10 +138,10 @@ const Modal = ({
         aria-labelledby={customHeader || !heading ? undefined : titleId}
         aria-describedby={hasBodyContent ? bodyId : undefined}
         tabIndex={-1}
-        className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.md} rounded-xl bg-white shadow-xl outline-none ${className}`}
+        className={`relative flex max-h-full w-full flex-col ${SIZE_CLASSES[size] ?? SIZE_CLASSES.md} rounded-xl bg-white shadow-xl outline-none ${className}`}
       >
         <div
-          className={`flex items-start justify-between gap-4 rounded-t-xl border-b border-gray-100 px-6 py-4 ${headerStyle.header}`}
+          className={`flex shrink-0 items-start justify-between gap-4 rounded-t-xl border-b border-gray-100 px-6 py-4 ${headerStyle.header}`}
         >
           {customHeader ?? (
             <div className="flex min-w-0 items-center gap-3">
@@ -175,7 +175,7 @@ const Modal = ({
           </button>
         </div>
 
-        <div id={bodyId} className="max-h-[70vh] overflow-y-auto px-6 py-5">
+        <div id={bodyId} className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
           {customContent ?? (
             <>
               {content && <div className="text-sm text-gray-700">{content}</div>}
@@ -190,7 +190,7 @@ const Modal = ({
         </div>
 
         {hasFooter && (
-          <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+          <div className="flex shrink-0 items-center justify-end gap-3 rounded-b-xl border-t border-gray-100 px-6 py-4">
             {secondaryButton && <ModalFooterButton variant="outline" {...secondaryButton} />}
             {primaryButton && (
               <ModalFooterButton

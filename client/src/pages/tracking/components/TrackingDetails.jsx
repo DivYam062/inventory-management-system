@@ -18,7 +18,7 @@ const ITEM_STATUS = {
 const Field = ({ label, children }) => (
   <div>
     <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1 text-sm text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
+    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
   </div>
 );
 
@@ -82,7 +82,7 @@ const TrackingDetails = ({ tracker, companyRoute, onNavigate }) => {
 
   return (
     <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-4">
         <Field label="Reference">{tracker.number}</Field>
         <Field label="Status">
           <StatusBadge status={tracker.stage} label={tracker.stageLabel} />
