@@ -15,7 +15,7 @@ import GateEntries from "../pages/gate-entries/GateEntries";
 import Grns from "../pages/grns/Grns";
 import Putaway from "../pages/putaway/Putaway";
 import StockOverview from "../pages/inventory/StockOverview";
-import AuditLog from "../pages/audit/AuditLog";
+import { InventoryLogs, ConfigurationLogs, CatalogLogs, UserRoleLogs } from "../pages/audit/LogPages";
 import Tracking from "../pages/tracking/Tracking";
 import Sellers from "../pages/sellers/Sellers";
 import Suppliers from "../pages/suppliers/Suppliers";
@@ -44,7 +44,10 @@ const ORGANIZATION_PAGES = {
   "/inventory/operations/putaway": Putaway,
   "/inventory/stock-overview": StockOverview,
   "/inventory/stock-tracking": Tracking,
-  "/inventory/audit-log": AuditLog,
+  "/logs/inventory": InventoryLogs,
+  "/logs/configuration": ConfigurationLogs,
+  "/logs/catalog": CatalogLogs,
+  "/logs/users-roles": UserRoleLogs,
   "/seller/sellers": Sellers,
   "/seller/suppliers": Suppliers,
   "/settings/configuration": Configuration,

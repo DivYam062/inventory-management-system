@@ -4,6 +4,7 @@ const { ROLE_TYPES, FULL_ACCESS_ROLE_TYPES, ROLE_TYPE_NAMES } = require("../conf
 const { PERMISSION_REGISTRY, ACTIONS, isValidPermission } = require("../config/permissions");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 const { resolvePermissions, isSubsetOf } = require("../services/permissionService");
 
 // Organization role management. Every query is scoped to the caller's organization.
@@ -29,6 +30,12 @@ const permissionsToArray = (permissions) =>
     resource: entry.resource,
     actions: entry.actions.filter((action) => permissions[entry.resource].includes(action)),
   }));
+
+// "Product: view, edit" lines for a role's permissions, and what changed between two versions of them.
+const RESOURCE_LABELS = Object.fromEntries(PERMISSION_REGISTRY.map((entry) => [entry.resource, entry.label]));
+
+const permissionKeys = (permissions) =>
+  new Set(permissions.flatMap((entry) => entry.actions.map((action) => `${RESOURCE_LABELS[entry.resource] ?? entry.resource}: ${action}`)));
 
 const serializeRole = (role, userCount, req) => {
   const resolved = resolvePermissions(role);
@@ -196,6 +203,16 @@ const createRole = async (req, res) => {
     throw error;
   }
 
+  const granted = [...permissionKeys(role.permissions)];
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.ROLE,
+    entity: { id: role._id, number: role.name },
+    action: AUDIT_ACTIONS.CREATED,
+    summary: `Created role "${role.name}" with ${granted.length} permission${granted.length === 1 ? "" : "s"}`,
+    meta: { permissions: granted },
+  });
+
   return sendSuccess(res, serializeRole(role, 0, req), { status: 201 });
 };
 
@@ -220,6 +237,8 @@ const updateRole = async (req, res) => {
     }
   }
 
+  const before = { name: role.name, permissions: permissionKeys(permissionsToArray(resolvePermissions(role))) };
+
   if (name !== undefined) role.name = name.trim();
   if (parsed) role.permissions = permissionsToArray(parsed.permissions);
 
@@ -228,6 +247,27 @@ const updateRole = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) return fail(res, 400, "A role with this name already exists");
     throw error;
+  }
+
+  const after = permissionKeys(permissionsToArray(resolvePermissions(role)));
+  const added = [...after].filter((key) => !before.permissions.has(key));
+  const removed = [...before.permissions].filter((key) => !after.has(key));
+  const changes = diffFields(before, role, { name: "Name" });
+
+  const parts = [
+    ...(changes.length > 0 ? [describeChanges(changes)] : []),
+    ...(added.length > 0 ? [`added: ${added.join(", ")}`] : []),
+    ...(removed.length > 0 ? [`removed: ${removed.join(", ")}`] : []),
+  ];
+
+  if (parts.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.ROLE,
+      entity: { id: role._id, number: role.name },
+      action: AUDIT_ACTIONS.UPDATED,
+      summary: `Edited role "${role.name}" (${parts.join("; ")})`,
+      meta: { changes, added, removed },
+    });
   }
 
   const userCounts = await countUsersByRole([role._id]);
@@ -250,6 +290,13 @@ const deleteRole = async (req, res) => {
   }
 
   await Role.deleteOne({ _id: role._id });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.ROLE,
+    entity: { id: role._id, number: role.name },
+    action: AUDIT_ACTIONS.DELETED,
+    summary: `Deleted role "${role.name}"`,
+  });
 
   return sendSuccess(res, { id: role._id });
 };

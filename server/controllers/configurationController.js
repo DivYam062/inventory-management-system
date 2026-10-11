@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 const { CURRENCY_CODES, UNIT_CODES } = require("../config/referenceData");
 const { getConfiguration, getCatalog, serializeModules } = require("../services/configurationService");
 const { sendSuccess } = require("../utils/response");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Organization configuration. Permissions: configuration:view to read, configuration:edit to change.
 //
@@ -55,6 +56,26 @@ const codesInUse = async (organizationId, field, codes) => {
 const describeInUse = (inUse, action, label) =>
   `Cannot ${action} ${inUse.map((row) => `${row.code} (${row.count} product${row.count === 1 ? "" : "s"})`).join(", ")}: still used as ${label}.`;
 
+// One line of the audit log about the organization's configuration. `topic` names what changed ("Modules",
+// "Currencies", ...).
+const logConfiguration = (req, configuration, { topic, action = AUDIT_ACTIONS.UPDATED, summary, meta }) =>
+  logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.CONFIGURATION,
+    entity: { id: configuration._id, number: topic },
+    action,
+    summary,
+    meta,
+  });
+
+const MODULE_LABELS = { purchaseOrder: "Purchase Orders", gateEntry: "Gate Entry", grn: "GRN" };
+
+// "+USD, +EUR, -JPY" for the codes added to / removed from an enabled list.
+const listChange = (before, after) => {
+  const added = after.filter((code) => !before.includes(code)).map((code) => `+${code}`);
+  const removed = before.filter((code) => !after.includes(code)).map((code) => `-${code}`);
+  return [...added, ...removed];
+};
+
 const getConfigurationHandler = async (req, res) => {
   const configuration = await getConfiguration(req.organizationId);
   return sendSuccess(res, serialize(configuration));
@@ -70,6 +91,14 @@ const updateConfiguration = async (req, res) => {
   const catalog = getCatalog(configuration);
 
   const updates = {};
+
+  // What it was, to describe what changes.
+  const before = {
+    modules: { purchaseOrder: configuration.modules.purchaseOrder, gateEntry: configuration.modules.gateEntry, grn: configuration.modules.grn },
+    allowOverReceiving: configuration.purchaseOrder.allowOverReceiving,
+    currencies: [...configuration.currencies],
+    units: [...configuration.units],
+  };
 
   if (modules !== undefined) {
     if (!isPlainObject(modules)) return fail(res, 400, "Modules must be an object");
@@ -127,6 +156,39 @@ const updateConfiguration = async (req, res) => {
   Object.assign(configuration, updates);
   await configuration.save();
 
+  const moduleChanges = diffFields(
+    before.modules,
+    { purchaseOrder: configuration.modules.purchaseOrder, gateEntry: configuration.modules.gateEntry, grn: configuration.modules.grn },
+    MODULE_LABELS
+  ).map((change) => ({ ...change, from: change.from === "true" ? "on" : "off", to: change.to === "true" ? "on" : "off" }));
+  if (moduleChanges.length > 0) {
+    await logConfiguration(req, configuration, {
+      topic: "Modules",
+      summary: `Changed modules (${describeChanges(moduleChanges)})`,
+      meta: { changes: moduleChanges },
+    });
+  }
+
+  if (before.allowOverReceiving !== configuration.purchaseOrder.allowOverReceiving) {
+    const now = configuration.purchaseOrder.allowOverReceiving ? "on" : "off";
+    await logConfiguration(req, configuration, {
+      topic: "Purchase order settings",
+      summary: `Turned over-receiving ${now}`,
+      meta: { changes: [{ field: "Over-receiving", from: before.allowOverReceiving ? "on" : "off", to: now }] },
+    });
+  }
+
+  for (const [key, topic] of [["currencies", "Currencies"], ["units", "Units of measurement"]]) {
+    const changed = listChange(before[key], configuration[key]);
+    if (changed.length > 0) {
+      await logConfiguration(req, configuration, {
+        topic,
+        summary: `Changed the enabled ${topic.toLowerCase()} (${changed.join(", ")})`,
+        meta: { added: changed.filter((c) => c.startsWith("+")).map((c) => c.slice(1)), removed: changed.filter((c) => c.startsWith("-")).map((c) => c.slice(1)) },
+      });
+    }
+  }
+
   return sendSuccess(res, serialize(configuration));
 };
 
@@ -160,6 +222,13 @@ const addCurrency = async (req, res) => {
   configuration.currencies.push(upperCode); // a new currency is enabled right away
   await configuration.save();
 
+  await logConfiguration(req, configuration, {
+    topic: `Currency ${upperCode}`,
+    action: AUDIT_ACTIONS.CREATED,
+    summary: `Added the currency ${upperCode} (${name.trim()})`,
+    meta: { code: upperCode, name: name.trim(), symbol: symbol ? symbol.trim() : null },
+  });
+
   return sendSuccess(res, serialize(configuration), { status: 201 });
 };
 
@@ -175,6 +244,13 @@ const addUnit = async (req, res) => {
   configuration.customUnits.push({ code: upperCode, name: name.trim() });
   configuration.units.push(upperCode);
   await configuration.save();
+
+  await logConfiguration(req, configuration, {
+    topic: `Unit ${upperCode}`,
+    action: AUDIT_ACTIONS.CREATED,
+    summary: `Added the unit of measurement ${upperCode} (${name.trim()})`,
+    meta: { code: upperCode, name: name.trim() },
+  });
 
   return sendSuccess(res, serialize(configuration), { status: 201 });
 };
@@ -201,6 +277,13 @@ const deleteCustom = ({ customKey, enabledKey, productField, label, inUseLabel, 
   configuration[customKey] = configuration[customKey].filter((entry) => entry.code !== code);
   configuration[enabledKey] = remainingEnabled;
   await configuration.save();
+
+  await logConfiguration(req, configuration, {
+    topic: `${label} ${code}`,
+    action: AUDIT_ACTIONS.DELETED,
+    summary: `Deleted the custom ${label.toLowerCase()} ${code}`,
+    meta: { code },
+  });
 
   return sendSuccess(res, serialize(configuration));
 };

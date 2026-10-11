@@ -47,7 +47,7 @@ const PAGES = {
   putaway: "/inventory/operations/putaway",
   stock: "/inventory/stock-overview",
   tracking: "/inventory/stock-tracking",
-  audit: "/inventory/audit-log",
+  audit: "/logs/inventory",
   users: "/settings/users",
 };
 

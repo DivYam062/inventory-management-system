@@ -5,6 +5,7 @@ const Role = require("../models/Role");
 const { ROLE_TYPES, ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 const { resolvePermissions, isSubsetOf } = require("../services/permissionService");
 
 // Organization user management. Every query is scoped to the caller's organization
@@ -73,6 +74,9 @@ const roleAssignmentError = (req, role) => {
 
 // Loads the user a request targets (inside the organization) together with their role, and checks that
 // the caller may modify them. Returns { user, role } or sends the error response and returns null.
+// How a user is named in the audit log.
+const userLabel = (user) => `${user.name} (${user.email})`;
+
 const loadManageableUser = async (req, res) => {
   const user = await findByIdInOrg(User, req, req.params.id);
 
@@ -197,6 +201,15 @@ const createUser = async (req, res) => {
     status,
   });
 
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.USER,
+    entity: { id: user._id, number: userLabel(user) },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: user.status,
+    summary: `Created user "${user.name}" (${user.email}) with the role "${role.name}"`,
+    meta: { role: role.name },
+  });
+
   return sendSuccess(res, serializeUser(user, role, req), { status: 201 });
 };
 
@@ -239,12 +252,42 @@ const updateUser = async (req, res) => {
     role = newRole;
   }
 
+  const before = { name: user.name, phone: user.phone, role: loaded.role?.name, status: user.status };
+
   if (name !== undefined) user.name = name;
   if (phone !== undefined) user.phone = phone || undefined;
   if (changesStatus) user.status = status;
   if (password !== undefined) user.password = password;
 
   await user.save();
+
+  const changes = diffFields(before, { name: user.name, phone: user.phone, role: role?.name, status: user.status }, {
+    name: "Name",
+    phone: "Phone",
+    role: "Role",
+    status: "Status",
+  });
+  if (changes.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entity: { id: user._id, number: userLabel(user) },
+      action: AUDIT_ACTIONS.UPDATED,
+      previousStatus: before.status,
+      newStatus: user.status,
+      summary: `Edited user "${user.name}" (${describeChanges(changes)})`,
+      meta: { changes },
+    });
+  }
+
+  // The password itself is never recorded - only that it was set.
+  if (password !== undefined) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entity: { id: user._id, number: userLabel(user) },
+      action: AUDIT_ACTIONS.PASSWORD_RESET,
+      summary: `Set a new password for "${user.name}"`,
+    });
+  }
 
   return sendSuccess(res, serializeUser(user, role, req));
 };
@@ -260,6 +303,14 @@ const deleteUser = async (req, res) => {
   }
 
   await User.deleteOne({ _id: user._id });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.USER,
+    entity: { id: user._id, number: userLabel(user) },
+    action: AUDIT_ACTIONS.DELETED,
+    previousStatus: user.status,
+    summary: `Deleted user "${user.name}" (${user.email})`,
+  });
 
   return sendSuccess(res, { id: user._id });
 };

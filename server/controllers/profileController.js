@@ -3,6 +3,7 @@ const generateToken = require("../utils/generateToken");
 const { serializeUser } = require("../services/authContextService");
 const { getConfiguration, serializeModules, serializePurchaseOrderSettings } = require("../services/configurationService");
 const { sendSuccess } = require("../utils/response");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Self-service account management for the signed-in user (any role, including the protected
 // Network Admin / Support users and the System Admin). Email, role and organization can never be
@@ -42,10 +43,23 @@ const updateProfile = async (req, res) => {
     }
   }
 
+  const before = { name: user.name, phone: user.phone };
+
   if (name !== undefined) user.name = name;
   if (phone !== undefined) user.phone = phone || undefined;
 
   await user.save();
+
+  const changes = diffFields(before, user, { name: "Name", phone: "Phone" });
+  if (changes.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entity: { id: user._id, number: `${user.name} (${user.email})` },
+      action: AUDIT_ACTIONS.UPDATED,
+      summary: `Updated their own profile (${describeChanges(changes)})`,
+      meta: { changes },
+    });
+  }
 
   return sendSuccess(res, { user: serializeUser(user, req.auth.user.role) });
 };
@@ -81,6 +95,14 @@ const changePassword = async (req, res) => {
 
   user.password = newPassword;
   await user.save();
+
+  // Only the fact is recorded, never the password.
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.USER,
+    entity: { id: user._id, number: `${user.name} (${user.email})` },
+    action: AUDIT_ACTIONS.PASSWORD_CHANGED,
+    summary: `Changed their own password`,
+  });
 
   return sendSuccess(res, { token: generateToken(user._id, user.tokenVersion) });
 };

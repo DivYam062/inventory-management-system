@@ -3,6 +3,7 @@ import {
   Building2,
   Tags,
   Boxes,
+  ScrollText,
   Store,
   Settings,
 } from "lucide-react";
@@ -96,12 +97,6 @@ export const ORGANIZATION_NAVIGATION = [
         permission: ["tracking", "view"],
         description: "Where each purchase order has got to (Purchase Order, Gate Entry, GRN, Putaway) and what to do next.",
       },
-      {
-        name: "Audit Log",
-        path: "/inventory/audit-log",
-        permission: ["audit-log", "view"],
-        description: "Who did what to which record, and when: purchase orders, gate entries, GRNs, putaways and stock changes.",
-      },
     ],
   },
 
@@ -121,6 +116,38 @@ export const ORGANIZATION_NAVIGATION = [
         path: "/seller/suppliers",
         permission: ["supplier", "view"],
         description: "The supplier users who belong to each seller.",
+      },
+    ],
+  },
+
+  {
+    name: "Logs",
+    path: "/logs",
+    icon: ScrollText,
+    children: [
+      {
+        name: "Inventory Logs",
+        path: "/logs/inventory",
+        permission: ["audit-log", "view"],
+        description: "Who did what to purchase orders, gate entries, GRNs, putaways and stock, and when.",
+      },
+      {
+        name: "Configuration Logs",
+        path: "/logs/configuration",
+        permission: ["audit-log", "view"],
+        description: "Changes to the organization's settings: modules, currencies and units of measurement.",
+      },
+      {
+        name: "Catalog Logs",
+        path: "/logs/catalog",
+        permission: ["audit-log", "view"],
+        description: "Changes to categories, products, sellers and suppliers.",
+      },
+      {
+        name: "User & Role Logs",
+        path: "/logs/users-roles",
+        permission: ["audit-log", "view"],
+        description: "Changes to users and roles: who was added, what a role may do, password resets.",
       },
     ],
   },

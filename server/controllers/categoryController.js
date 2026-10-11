@@ -3,6 +3,7 @@ const Product = require("../models/Product");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Categories of the caller's organization. Every query is scoped by req.organizationId (taken from the
 // token, never from the request). Permissions: category:view to read, category:create to add,
@@ -71,6 +72,14 @@ const createCategory = async (req, res) => {
     throw error;
   }
 
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.CATEGORY,
+    entity: { id: category._id, number: category.name },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: category.status,
+    summary: `Created category "${category.name}"`,
+  });
+
   return sendSuccess(res, serializeCategory(category, 0), { status: 201 });
 };
 
@@ -132,6 +141,8 @@ const updateCategory = async (req, res) => {
     return fail(res, 400, "Invalid status. Status must be either 'active' or 'inactive'");
   }
 
+  const before = { name: category.name, description: category.description, status: category.status };
+
   if (name !== undefined) category.name = name;
   if (description !== undefined) category.description = description;
   if (status !== undefined) category.status = status;
@@ -141,6 +152,19 @@ const updateCategory = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) return fail(res, 400, "A category with this name already exists");
     throw error;
+  }
+
+  const changes = diffFields(before, category, { name: "Name", description: "Description", status: "Status" });
+  if (changes.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.CATEGORY,
+      entity: { id: category._id, number: category.name },
+      action: AUDIT_ACTIONS.UPDATED,
+      previousStatus: before.status,
+      newStatus: category.status,
+      summary: `Edited category "${category.name}" (${describeChanges(changes)})`,
+      meta: { changes },
+    });
   }
 
   const productCounts = await countProductsByCategory([category._id]);
@@ -163,6 +187,14 @@ const deleteCategory = async (req, res) => {
   }
 
   await Category.deleteOne({ _id: category._id });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.CATEGORY,
+    entity: { id: category._id, number: category.name },
+    action: AUDIT_ACTIONS.DELETED,
+    previousStatus: category.status,
+    summary: `Deleted category "${category.name}"`,
+  });
 
   return sendSuccess(res, { id: category._id });
 };

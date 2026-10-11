@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const AuditLog = require("../models/AuditLog");
 const User = require("../models/User");
-const { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = AuditLog;
+const { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_GROUPS } = AuditLog;
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter } = require("../utils/orgScope");
 
@@ -44,14 +44,22 @@ const serialize = (entry) => ({
   createdAt: entry.createdAt,
 });
 
-// Filters: search (record number, what happened or who did it), entityType, action, userId, entityId (one
-// record's history), from / to (ISO date-times, inclusive), page, limit. Newest first.
+// Filters: group (inventory | catalog | configuration | user_role - what each Logs page shows), search (record
+// number, what happened or who did it), entityType, action, userId, entityId (one record's history), from / to
+// (ISO date-times, inclusive), page, limit. Newest first.
 const getAuditLogs = async (req, res) => {
-  const { search, entityType, action, userId, entityId, from, to, page, limit } = req.query;
+  const { group, search, entityType, action, userId, entityId, from, to, page, limit } = req.query;
 
   const query = orgFilter(req);
 
-  if (Object.values(AUDIT_ENTITY_TYPES).includes(entityType)) query.entityType = entityType;
+  // A group limits the log to its record types; entityType narrows further within it (a type outside the group
+  // gives an empty result rather than leaking another page's entries).
+  const groupTypes = AUDIT_GROUPS[group];
+  if (Object.values(AUDIT_ENTITY_TYPES).includes(entityType)) {
+    query.entityType = groupTypes && !groupTypes.includes(entityType) ? { $in: [] } : entityType;
+  } else if (groupTypes) {
+    query.entityType = { $in: groupTypes };
+  }
   if (Object.values(AUDIT_ACTIONS).includes(action)) query.action = action;
   if (typeof userId === "string" && mongoose.isValidObjectId(userId)) query.performedBy = userId;
   if (typeof entityId === "string" && mongoose.isValidObjectId(entityId)) query.entityId = entityId;

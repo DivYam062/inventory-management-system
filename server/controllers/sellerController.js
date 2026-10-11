@@ -7,6 +7,7 @@ const Grn = require("../models/Grn");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Sellers of the caller's organization. Every query is scoped by req.organizationId (taken from the
 // token, never from the request). Permissions: seller:view to read, seller:create to add, seller:edit to
@@ -128,6 +129,14 @@ const createSeller = async (req, res) => {
 
   if (!(await saveSeller(res, seller))) return;
 
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.SELLER,
+    entity: { id: seller._id, number: seller.name },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: seller.status,
+    summary: `Created seller "${seller.name}"`,
+  });
+
   return sendSuccess(res, serializeSeller(seller), { status: 201 });
 };
 
@@ -197,6 +206,8 @@ const updateSeller = async (req, res) => {
     return fail(res, 400, "Invalid status. Status must be either 'active' or 'inactive'");
   }
 
+  const before = { name: seller.name, email: seller.email, phone: seller.phone, address: seller.address, status: seller.status };
+
   if (name !== undefined) seller.name = name;
   if (email !== undefined) seller.email = email;
   if (phone !== undefined) seller.phone = phone || undefined;
@@ -204,6 +215,19 @@ const updateSeller = async (req, res) => {
   if (status !== undefined) seller.status = status;
 
   if (!(await saveSeller(res, seller))) return;
+
+  const changes = diffFields(before, seller, { name: "Name", email: "Email", phone: "Phone", address: "Address", status: "Status" });
+  if (changes.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.SELLER,
+      entity: { id: seller._id, number: seller.name },
+      action: AUDIT_ACTIONS.UPDATED,
+      previousStatus: before.status,
+      newStatus: seller.status,
+      summary: `Edited seller "${seller.name}" (${describeChanges(changes)})`,
+      meta: { changes },
+    });
+  }
 
   const relations = await countSellerRelations([seller._id]);
 
@@ -262,6 +286,14 @@ const deleteSeller = async (req, res) => {
   }
 
   await Seller.deleteOne({ _id: seller._id });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.SELLER,
+    entity: { id: seller._id, number: seller.name },
+    action: AUDIT_ACTIONS.DELETED,
+    previousStatus: seller.status,
+    summary: `Deleted seller "${seller.name}"`,
+  });
 
   return sendSuccess(res, { id: seller._id });
 };

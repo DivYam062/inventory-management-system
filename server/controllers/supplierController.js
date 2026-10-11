@@ -9,6 +9,7 @@ const { PURCHASE_ORDER_STATUS } = PurchaseOrder;
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Suppliers of the caller's organization. Every query is scoped by req.organizationId (taken from the
 // token, never from the request). Permissions: supplier:view to read, supplier:create to add,
@@ -136,6 +137,14 @@ const createSupplier = async (req, res) => {
 
   await supplier.populate("sellerId", SELLER_FIELDS);
 
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.SUPPLIER,
+    entity: { id: supplier._id, number: supplier.name },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: supplier.status,
+    summary: `Created supplier "${supplier.name}"${supplier.sellerId?.name ? ` under seller "${supplier.sellerId.name}"` : " (unassigned)"}`,
+  });
+
   return sendSuccess(res, serializeSupplier(supplier), { status: 201 });
 };
 
@@ -220,12 +229,27 @@ const updateSupplier = async (req, res) => {
     return fail(res, 400, "Invalid status. Status must be either 'active' or 'inactive'");
   }
 
+  const before = { name: supplier.name, email: supplier.email, phone: supplier.phone, status: supplier.status };
+
   if (name !== undefined) supplier.name = name;
   if (email !== undefined) supplier.email = email;
   if (phone !== undefined) supplier.phone = phone || undefined;
   if (status !== undefined) supplier.status = status;
 
   if (!(await saveSupplier(res, supplier))) return;
+
+  const changes = diffFields(before, supplier, { name: "Name", email: "Email", phone: "Phone", status: "Status" });
+  if (changes.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.SUPPLIER,
+      entity: { id: supplier._id, number: supplier.name },
+      action: AUDIT_ACTIONS.UPDATED,
+      previousStatus: before.status,
+      newStatus: supplier.status,
+      summary: `Edited supplier "${supplier.name}" (${describeChanges(changes)})`,
+      meta: { changes },
+    });
+  }
 
   return sendSuccess(res, serializeSupplier(supplier));
 };
@@ -250,6 +274,14 @@ const assignSupplier = async (req, res) => {
   supplier.sellerId = found.seller._id;
   await supplier.save();
   await supplier.populate("sellerId", SELLER_FIELDS);
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.SUPPLIER,
+    entity: { id: supplier._id, number: supplier.name },
+    action: AUDIT_ACTIONS.ASSIGNED,
+    summary: `Assigned supplier "${supplier.name}" to seller "${supplier.sellerId.name}"`,
+    meta: { seller: supplier.sellerId.name },
+  });
 
   return sendSuccess(res, serializeSupplier(supplier));
 };
@@ -295,8 +327,18 @@ const unassignSupplier = async (req, res) => {
     );
   }
 
+  const previousSeller = supplier.sellerId ? supplier.sellerId.name : null;
+
   supplier.sellerId = null;
   await supplier.save();
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.SUPPLIER,
+    entity: { id: supplier._id, number: supplier.name },
+    action: AUDIT_ACTIONS.UNASSIGNED,
+    summary: `Unassigned supplier "${supplier.name}" from seller "${previousSeller}"`,
+    meta: { seller: previousSeller },
+  });
 
   return sendSuccess(res, serializeSupplier(supplier));
 };
@@ -333,6 +375,14 @@ const deleteSupplier = async (req, res) => {
   }
 
   await Supplier.deleteOne({ _id: supplier._id });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.SUPPLIER,
+    entity: { id: supplier._id, number: supplier.name },
+    action: AUDIT_ACTIONS.DELETED,
+    previousStatus: supplier.status,
+    summary: `Deleted supplier "${supplier.name}"`,
+  });
 
   return sendSuccess(res, { id: supplier._id });
 };

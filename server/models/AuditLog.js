@@ -7,6 +7,27 @@ const AUDIT_ENTITY_TYPES = {
   GRN: "grn",
   PUTAWAY: "putaway",
   INVENTORY: "inventory", // the stock of one product (entityId is the product)
+  CATEGORY: "category",
+  PRODUCT: "product",
+  SELLER: "seller",
+  SUPPLIER: "supplier",
+  CONFIGURATION: "configuration", // a setting of the organization (modules, currencies, units, ...)
+  USER: "user",
+  ROLE: "role",
+};
+
+// The audit log is shown on four pages; each shows the records of one group.
+const AUDIT_GROUPS = {
+  inventory: [
+    AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    AUDIT_ENTITY_TYPES.GATE_ENTRY,
+    AUDIT_ENTITY_TYPES.GRN,
+    AUDIT_ENTITY_TYPES.PUTAWAY,
+    AUDIT_ENTITY_TYPES.INVENTORY,
+  ],
+  catalog: [AUDIT_ENTITY_TYPES.CATEGORY, AUDIT_ENTITY_TYPES.PRODUCT, AUDIT_ENTITY_TYPES.SELLER, AUDIT_ENTITY_TYPES.SUPPLIER],
+  configuration: [AUDIT_ENTITY_TYPES.CONFIGURATION],
+  user_role: [AUDIT_ENTITY_TYPES.USER, AUDIT_ENTITY_TYPES.ROLE],
 };
 
 const AUDIT_ACTIONS = {
@@ -19,6 +40,10 @@ const AUDIT_ACTIONS = {
   STATUS_CHANGED: "status_changed", // a record moved on because of something done on another record
   STOCK_INCREASED: "stock_increased",
   STOCK_DECREASED: "stock_decreased",
+  ASSIGNED: "assigned", // a supplier put under a seller
+  UNASSIGNED: "unassigned",
+  PASSWORD_CHANGED: "password_changed",
+  PASSWORD_RESET: "password_reset", // someone else set the user's password
 };
 
 // One line of the audit log: who did what to which record, and when. Rows are only ever added - never edited
@@ -69,3 +94,4 @@ const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 module.exports = AuditLog;
 module.exports.AUDIT_ENTITY_TYPES = AUDIT_ENTITY_TYPES;
 module.exports.AUDIT_ACTIONS = AUDIT_ACTIONS;
+module.exports.AUDIT_GROUPS = AUDIT_GROUPS;

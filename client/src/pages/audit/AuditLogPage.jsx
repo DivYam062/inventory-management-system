@@ -25,6 +25,13 @@ const ENTITY_LABELS = {
   grn: "GRN",
   putaway: "Putaway",
   inventory: "Stock",
+  category: "Category",
+  product: "Product",
+  seller: "Seller",
+  supplier: "Supplier",
+  configuration: "Setting",
+  user: "User",
+  role: "Role",
 };
 
 const ACTION_LABELS = {
@@ -37,10 +44,11 @@ const ACTION_LABELS = {
   status_changed: { label: "Status changed", variant: "gray" },
   stock_increased: { label: "Stock increased", variant: "green" },
   stock_decreased: { label: "Stock decreased", variant: "orange" },
+  assigned: { label: "Assigned", variant: "blue" },
+  unassigned: { label: "Unassigned", variant: "orange" },
+  password_changed: { label: "Password changed", variant: "yellow" },
+  password_reset: { label: "Password reset", variant: "yellow" },
 };
-
-const TYPE_OPTIONS = [{ value: "", label: "All Records" }, ...Object.entries(ENTITY_LABELS).map(([value, label]) => ({ value, label }))];
-const ACTION_OPTIONS = [{ value: "", label: "All Actions" }, ...Object.entries(ACTION_LABELS).map(([value, { label }]) => ({ value, label }))];
 
 // The date inputs hold YYYY-MM-DD in the user's own calendar; the API gets the start of the first day and the
 // end of the last day in that time zone, so a whole day is included.
@@ -55,6 +63,7 @@ const humanize = (key) => {
 
 const formatValue = (value) => {
   if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.length === 0 ? "—" : value.map(formatValue).join(", ");
   if (typeof value === "object") return Object.entries(value).map(([key, inner]) => `${humanize(key)}: ${formatValue(inner)}`).join(", ");
   return String(value);
 };
@@ -78,10 +87,12 @@ const Field = ({ label, children }) => (
   </div>
 );
 
-// Everything about one entry, shown in a modal.
+// Everything about one entry, shown in a modal. An edit lists each field that changed (before -> after); other
+// extra facts (quantities, reasons, permissions) follow as plain rows.
 const EntryDetails = ({ entry }) => {
   const action = ACTION_LABELS[entry.action];
-  const meta = entry.meta ? Object.entries(entry.meta) : [];
+  const { changes, ...rest } = entry.meta ?? {};
+  const details = Object.entries(rest);
 
   return (
     <div className="space-y-5">
@@ -100,11 +111,29 @@ const EntryDetails = ({ entry }) => {
         <p className="mt-1 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-900">{entry.summary}</p>
       </div>
 
-      {meta.length > 0 && (
+      {Array.isArray(changes) && changes.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">What changed</p>
+          <dl className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+            {changes.map((change) => (
+              <div key={change.field} className="flex items-start justify-between gap-4 px-4 py-2.5 text-sm">
+                <dt className="text-gray-500">{change.field}</dt>
+                <dd className="text-right text-gray-900">
+                  <span className="text-gray-500 line-through decoration-gray-300">{change.from}</span>
+                  <span className="mx-2 text-gray-400">→</span>
+                  <span className="font-medium">{change.to}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {details.length > 0 && (
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Details</p>
           <dl className="divide-y divide-gray-100 rounded-lg border border-gray-200">
-            {meta.map(([key, value]) => (
+            {details.map(([key, value]) => (
               <div key={key} className="flex items-start justify-between gap-4 px-4 py-2.5 text-sm">
                 <dt className="text-gray-500">{humanize(key)}</dt>
                 <dd className="text-right text-gray-900">{formatValue(value)}</dd>
@@ -117,9 +146,15 @@ const EntryDetails = ({ entry }) => {
   );
 };
 
-// The audit log of the organization: who did what to which record, and when - purchase orders, gate entries,
-// GRNs, putaways and stock changes. Read-only; the log is never edited or deleted.
-const AuditLog = () => {
+// A page of the audit log: who did what to which record, and when. One component serves all four Logs pages; each
+// shows one group of records (see the wrappers in LogPages.jsx).
+//   group        "inventory" | "catalog" | "configuration" | "user_role" - what the API is asked for
+//   title, description   the page's heading
+//   entityTypes  the record types of this group (a "record type" filter is shown when there is more than one)
+//   actionKeys   the actions that can occur in this group (the "action" filter)
+//   emptyText    what an empty log says
+// Read-only: the log is never edited or deleted.
+const AuditLogPage = ({ group, title, description, entityTypes, actionKeys, emptyText }) => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -134,6 +169,9 @@ const AuditLog = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const [viewTarget, setViewTarget] = useState(null);
+
+  const typeOptions = [{ value: "", label: "All Records" }, ...entityTypes.map((value) => ({ value, label: ENTITY_LABELS[value] }))];
+  const actionOptions = [{ value: "", label: "All Actions" }, ...actionKeys.map((value) => ({ value, label: ACTION_LABELS[value].label }))];
 
   // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
   // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
@@ -154,6 +192,7 @@ const AuditLog = () => {
       setError("");
 
       const { data, meta } = await getAuditLogs({
+        group,
         search: search || undefined,
         entityType: entityType || undefined,
         action: action || undefined,
@@ -171,11 +210,11 @@ const AuditLog = () => {
       setEntries(data);
       setTotalPages(meta?.total_page ?? 1);
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to load the audit log."));
+      setError(getErrorMessage(err, "Failed to load the logs."));
     } finally {
       setLoading(false);
     }
-  }, [search, entityType, action, from, to, page]);
+  }, [group, search, entityType, action, from, to, page]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-filter-change; no data-fetching library is set up in this project yet
@@ -254,10 +293,7 @@ const AuditLog = () => {
 
   return (
     <div>
-      <PageHeader
-        title="Audit Log"
-        description="Who did what to which record, and when: purchase orders, gate entries, GRNs, putaways and stock changes. The log cannot be edited or deleted."
-      />
+      <PageHeader title={title} description={description} />
 
       <Card bodyClassName="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -265,17 +301,19 @@ const AuditLog = () => {
             <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search record, what happened or who..." />
           </div>
 
-          <div className="sm:w-48">
-            <Select
-              aria-label="Filter by record type"
-              value={entityType}
-              onChange={(e) => {
-                setEntityType(e.target.value);
-                setPage(1);
-              }}
-              options={TYPE_OPTIONS}
-            />
-          </div>
+          {entityTypes.length > 1 && (
+            <div className="sm:w-48">
+              <Select
+                aria-label="Filter by record type"
+                value={entityType}
+                onChange={(e) => {
+                  setEntityType(e.target.value);
+                  setPage(1);
+                }}
+                options={typeOptions}
+              />
+            </div>
+          )}
 
           <div className="sm:w-48">
             <Select
@@ -285,7 +323,7 @@ const AuditLog = () => {
                 setAction(e.target.value);
                 setPage(1);
               }}
-              options={ACTION_OPTIONS}
+              options={actionOptions}
             />
           </div>
 
@@ -333,11 +371,7 @@ const AuditLog = () => {
               <EmptyState
                 icon={ScrollText}
                 title={hasActiveFilters ? "No activity matches your filters" : "No activity recorded yet"}
-                description={
-                  hasActiveFilters
-                    ? "Try a different search or change the filters above."
-                    : "Entries appear here as purchase orders, gate entries, GRNs, putaways and stock changes are made."
-                }
+                description={hasActiveFilters ? "Try a different search or change the filters above." : emptyText}
               />
             ) : (
               <>
@@ -353,7 +387,7 @@ const AuditLog = () => {
         isOpen={Boolean(viewTarget)}
         onClose={() => setViewTarget(null)}
         size="lg"
-        headerProps={{ heading: "Audit Entry", icon: ScrollText }}
+        headerProps={{ heading: "Log Entry", icon: ScrollText }}
         footerProps={{ secondaryButton: { text: "Close", onClick: () => setViewTarget(null) } }}
       >
         {viewTarget && <EntryDetails entry={viewTarget} />}
@@ -362,4 +396,4 @@ const AuditLog = () => {
   );
 };
 
-export default AuditLog;
+export default AuditLogPage;

@@ -16,6 +16,8 @@ const { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = AuditLog;
 // `req` supplies the organization and the user (always from the token). Writing the log must never break the
 // operation that has already happened, so a failure here is reported to the server log and swallowed.
 const logAudit = async (req, { entityType, entity, action, previousStatus, newStatus, summary, meta }) => {
+  if (!req.organizationId) return; // the System Admin acts outside every organization
+
   try {
     await AuditLog.create({
       organizationId: req.organizationId,
@@ -42,4 +44,17 @@ const logStatusChange = (req, { entityType, entity, previousStatus, newStatus, s
     ? Promise.resolve()
     : logAudit(req, { entityType, entity, action: AUDIT_ACTIONS.STATUS_CHANGED, previousStatus, newStatus, summary, meta });
 
-module.exports = { logAudit, logStatusChange, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS };
+// What changed between two versions of a record, for the fields in `labels` ({ fieldName: "Readable name" }):
+//   [{ field: "Name", from: "Drinks", to: "Beverages" }, ...]  - empty when nothing that matters changed.
+// Values are compared as text (so ids and numbers compare fine) and shown as "—" when empty.
+const display = (value) => (value === undefined || value === null || value === "" ? "—" : String(value));
+
+const diffFields = (before, after, labels) =>
+  Object.entries(labels).flatMap(([key, field]) =>
+    display(before[key]) === display(after[key]) ? [] : [{ field, from: display(before[key]), to: display(after[key]) }]
+  );
+
+// "Name: Drinks → Beverages; Status: active → inactive"
+const describeChanges = (changes) => changes.map((change) => `${change.field}: ${change.from} → ${change.to}`).join("; ");
+
+module.exports = { logAudit, logStatusChange, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS };

@@ -9,6 +9,7 @@ const Inventory = require("../models/Inventory");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 const { deleteUploadedFile } = require("../middleware/uploadMiddleware");
 const { getConfiguration } = require("../services/configurationService");
 
@@ -240,6 +241,15 @@ const createProduct = async (req, res) => {
     { path: "sellerId", select: "name status" },
   ]);
 
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PRODUCT,
+    entity: { id: product._id, number: `${product.name} (${product.sku})` },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: product.status,
+    summary: `Created product "${product.name}" (${product.sku}) in category "${product.categoryId?.name}" for seller "${product.sellerId?.name}"`,
+    meta: { unit: product.unit, price: product.price, currency: product.currency },
+  });
+
   return sendSuccess(res, serializeProduct(product), { status: 201 });
 };
 
@@ -393,6 +403,20 @@ const updateProduct = async (req, res) => {
     }
   }
 
+  const before = {
+    name: product.name,
+    sku: product.sku,
+    barcode: product.barcode,
+    description: product.description,
+    price: product.price,
+    currency: product.currency,
+    unit: product.unit,
+    status: product.status,
+    category: product.categoryId?.name,
+    seller: product.sellerId?.name,
+    image: product.image ? "set" : "none",
+  };
+
   if (name !== undefined) product.name = name;
   if (sku !== undefined) product.sku = sku;
   if (parsedBarcode) product.barcode = parsedBarcode.value;
@@ -435,6 +459,47 @@ const updateProduct = async (req, res) => {
     { path: "sellerId", select: "name status" },
   ]);
 
+  const changes = diffFields(
+    before,
+    {
+      name: product.name,
+      sku: product.sku,
+      barcode: product.barcode,
+      description: product.description,
+      price: product.price,
+      currency: product.currency,
+      unit: product.unit,
+      status: product.status,
+      category: product.categoryId?.name,
+      seller: product.sellerId?.name,
+      image: product.image ? "set" : "none",
+    },
+    {
+      name: "Name",
+      sku: "SKU",
+      barcode: "Barcode",
+      description: "Description",
+      price: "Price",
+      currency: "Currency",
+      unit: "Unit",
+      status: "Status",
+      category: "Category",
+      seller: "Seller",
+      image: "Image",
+    }
+  );
+  if (changes.length > 0) {
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.PRODUCT,
+      entity: { id: product._id, number: `${product.name} (${product.sku})` },
+      action: AUDIT_ACTIONS.UPDATED,
+      previousStatus: before.status,
+      newStatus: product.status,
+      summary: `Edited product "${product.name}" (${describeChanges(changes)})`,
+      meta: { changes },
+    });
+  }
+
   return sendSuccess(res, serializeProduct(product));
 };
 
@@ -463,6 +528,14 @@ const deleteProduct = async (req, res) => {
 
   await Product.deleteOne({ _id: product._id });
   deleteUploadedFile(product.image);
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PRODUCT,
+    entity: { id: product._id, number: `${product.name} (${product.sku})` },
+    action: AUDIT_ACTIONS.DELETED,
+    previousStatus: product.status,
+    summary: `Deleted product "${product.name}" (${product.sku})`,
+  });
 
   return sendSuccess(res, { id: product._id });
 };
