@@ -42,10 +42,10 @@ app.get("/", (req, res) => {
 // Auth routes (login, session profile)
 app.use("/api/auth", authRoutes);
 
-// System routes (Super Admin only)
+// System routes (System Admin only)
 app.use("/api/system", systemRoutes);
 
-// Organization management (Super Admin only)
+// Organization management (System Admin only)
 app.use("/api/organizations", organizationRoutes);
 
 // Organization users (permission-based, scoped to the caller's organization)

@@ -2,8 +2,8 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { usePermissions } from "../hooks/usePermissions";
 
-// scope="system"       -> Super Admin only
-// scope="organization" -> organization users only (Super Admin has no organization data access)
+// scope="system"       -> System Admin only
+// scope="organization" -> organization users only (System Admin has no organization data access)
 // permission={[resource, action]} -> additionally requires that permission
 // module="purchaseOrder" | "gateEntry" | "grn" -> additionally requires that the organization has the module on
 const ProtectedRoute = ({ scope, permission, module }) => {

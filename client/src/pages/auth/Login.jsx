@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
 import { setCredentials } from "../../store/slices/authSlice";
 import { loginUser } from "../../services/authService";
 import { getHomePath } from "../../utils/homePath";
@@ -57,51 +59,38 @@ const Login = () => {
         </p>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Email
-            </label>
+          <Input
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            autoComplete="username"
+            isRequired
+          />
 
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
+          {/* type="password" gives the field its show / hide (eye) button. */}
+          <Input
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            autoComplete="current-password"
+            isRequired
+          />
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Password
-            </label>
-
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button type="submit" size="lg" fullWidth loading={loading}>
             {loading ? "Logging in..." : "Login"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

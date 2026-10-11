@@ -9,8 +9,8 @@ const unauthorized = (res, message = "You are not authorized to perform this act
 // Authenticates the bearer token and attaches the authorization context to the request:
 //   req.user            the User document
 //   req.auth            { user, organization, isSuperAdmin, permissions }
-//   req.isSuperAdmin    true only for the system-level Super Admin
-//   req.organizationId  the caller's organization (null for Super Admin) - never taken from client input
+//   req.isSuperAdmin    true only for the system-level System Admin
+//   req.organizationId  the caller's organization (null for System Admin) - never taken from client input
 //   req.permissions     { resource: [actions] }
 const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;

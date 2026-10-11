@@ -24,10 +24,10 @@ const createDefaultAdmin = async () => {
       role: "admin",
     });
 
-    console.log("Default admin created successfully");
+    console.log("Network admin created successfully");
   } catch (error) {
     console.error(
-      "Error creating default admin:",
+      "Error creating network admin:",
       error.message
     );
   }

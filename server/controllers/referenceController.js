@@ -8,7 +8,7 @@ const { sendSuccess, buildMeta } = require("../utils/response");
 //
 // An organization user gets only what the organization has enabled in its configuration (every item
 // carries isEnabled: true), including the currencies / units it added itself (isCustom: true). `scope=all` returns the whole system list with isEnabled set per item, for the
-// configuration page; it needs configuration:view. Super Admin (no organization) gets the whole list.
+// configuration page; it needs configuration:view. System Admin (no organization) gets the whole list.
 
 const paginate = (systemItems, fields, configKey) => async (req, res) => {
   const { search, page, limit, scope } = req.query;

@@ -12,7 +12,7 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const { can, isSuperAdmin } = usePermissions();
 
-  // Super Admin and organization users have separate navigation; organization items are
+  // System Admin and organization users have separate navigation; organization items are
   // additionally filtered by the user's permissions.
   const menuItems = isSuperAdmin ? SYSTEM_NAVIGATION : filterNavigation(ORGANIZATION_NAVIGATION, can, modules);
 

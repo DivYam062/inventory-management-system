@@ -61,7 +61,7 @@ const getRecentOrganizations = async () => {
   }));
 };
 
-// System-level statistics for the Super Admin dashboard.
+// System-level statistics for the System Admin dashboard.
 const getSystemOverview = async (req, res) => {
   const [
     totalOrganizations,

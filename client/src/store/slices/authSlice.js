@@ -35,9 +35,9 @@ const token = localStorage.getItem("token");
 
 const initialState = {
   user: null,
-  // null for the system-level Super Admin.
+  // null for the system-level System Admin.
   organization: null,
-  // { resource: [actions] } - empty for Super Admin, who has no organization permissions.
+  // { resource: [actions] } - empty for System Admin, who has no organization permissions.
   permissions: {},
   modules: DEFAULT_MODULES,
   purchaseOrder: DEFAULT_PURCHASE_ORDER_SETTINGS,

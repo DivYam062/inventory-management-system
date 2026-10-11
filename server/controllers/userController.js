@@ -11,8 +11,8 @@ const { resolvePermissions, isSubsetOf } = require("../services/permissionServic
 // (req.organizationId); the organization is never read from the request body.
 //
 // Rules enforced here (the UI only mirrors them):
-//   - Default Admin and Support users (isProtected) cannot be edited, deactivated or deleted.
-//   - Only CUSTOM roles can be assigned (the Default Admin / Support roles belong to the system users).
+//   - Network Admin and Support users (isProtected) cannot be edited, deactivated or deleted.
+//   - Only CUSTOM roles can be assigned (the Network Admin / Support roles belong to the system users).
 //   - Nobody can assign a role, or manage a user whose role, has more permissions than their own.
 //   - You cannot change your own role or status, or delete yourself.
 //   - Email is globally unique and can never be changed after the user is created.
@@ -61,7 +61,7 @@ const roleAssignmentError = (req, role) => {
   if (!role) return "Role not found";
 
   if (role.type !== ROLE_TYPES.CUSTOM) {
-    return "The Default Admin and Support roles cannot be assigned to users";
+    return "The Network Admin and Support roles cannot be assigned to users";
   }
 
   if (!isSubsetOf(resolvePermissions(role), req.permissions)) {
@@ -82,7 +82,7 @@ const loadManageableUser = async (req, res) => {
   }
 
   if (user.isProtected) {
-    fail(res, 403, "The Default Admin and Support users cannot be modified");
+    fail(res, 403, "The Network Admin and Support users cannot be modified");
     return null;
   }
 

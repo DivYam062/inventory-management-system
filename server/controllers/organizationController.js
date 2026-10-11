@@ -74,8 +74,8 @@ const invalidBranding = (res) => res.status(400).json({ success: false, message:
 
 const notFound = (res) => res.status(404).json({ success: false, message: "Organization not found" });
 
-// The organization email becomes the Default Admin's login email, and user emails are globally
-// unique, so it cannot already belong to any user (including the Super Admin).
+// The organization email becomes the Network Admin's login email, and user emails are globally
+// unique, so it cannot already belong to any user (including the System Admin).
 const emailTakenByUser = async (email) => {
   if (!email) return false;
   return Boolean(await User.exists({ email: String(email).trim().toLowerCase() }));
@@ -85,8 +85,8 @@ const MIN_ADMIN_PASSWORD_LENGTH = 8;
 const MAX_ADMIN_PASSWORD_LENGTH = 72; // bcrypt ignores anything beyond 72 bytes
 
 // Creates the organization with its two protected users:
-//   - the Default Admin: login = the organization email, initial password = the one the Super Admin
-//     enters here (the Default Admin changes it themselves later);
+//   - the Network Admin: login = the organization email, initial password = the one the System Admin
+//     enters here (the Network Admin changes it themselves later);
 //   - the Support user: name/password from .env, email derived per organization (see supportUserService).
 const createOrganization = async (req, res) => {
   const { name, companyRoute, email, phone, address, branding, password } = req.body;
@@ -228,8 +228,8 @@ const updateOrganization = async (req, res) => {
   }
 
   if (email !== undefined && String(email).trim().toLowerCase() !== organization.email) {
-    // The organization's Default Admin user (created with the organization) keeps the email in sync.
-    return reject(400, "The organization email is the Default Admin login and cannot be changed here");
+    // The organization's Network Admin user (created with the organization) keeps the email in sync.
+    return reject(400, "The organization email is the Network Admin login and cannot be changed here");
   }
 
   if (status !== undefined && !Object.values(ENTITY_STATUS).includes(status)) {

@@ -27,7 +27,7 @@ const ErrorMessage = ({ children }) => (
   </div>
 );
 
-// The signed-in user's own account (any role, including the Default Admin and the Super Admin):
+// The signed-in user's own account (any role, including the Network Admin and the System Admin):
 // name and phone number, and a password change. The email is the login and can never be changed.
 const AccountCard = () => {
   const dispatch = useDispatch();
@@ -73,7 +73,7 @@ const AccountCard = () => {
       title="Account"
       description={
         isSuperAdmin
-          ? "Super Admin"
+          ? "System Admin"
           : `${user?.role?.name ?? ""}${organization?.name ? ` · ${organization.name}` : ""}`
       }
     >

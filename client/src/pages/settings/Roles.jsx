@@ -175,7 +175,7 @@ const Roles = () => {
         ) : (
           <Card
             title="Roles"
-            description={search ? "Filtered results" : "Default Admin and Support are system roles and cannot be changed"}
+            description={search ? "Filtered results" : "Network Admin and Support are system roles and cannot be changed"}
             actions={
               canCreate && (
                 <Button icon={Plus} onClick={() => openForm({ mode: "create" })}>

@@ -9,7 +9,7 @@ const { resolvePermissions, isSubsetOf } = require("../services/permissionServic
 // Organization role management. Every query is scoped to the caller's organization.
 //
 // Rules enforced here (the UI only mirrors them):
-//   - Default Admin and Support are protected: always every permission, never edited or deleted.
+//   - Network Admin and Support are protected: always every permission, never edited or deleted.
 //   - Custom roles can only be given permissions the caller holds themselves, and can only be managed
 //     by someone who holds all of the role's permissions (no privilege escalation).
 //   - Any permission implies "view" for its feature (you cannot create what you cannot see).
@@ -113,7 +113,7 @@ const loadManageableRole = async (req, res) => {
   }
 
   if (FULL_ACCESS_ROLE_TYPES.includes(role.type)) {
-    fail(res, 403, "The Default Admin and Support roles cannot be modified");
+    fail(res, 403, "The Network Admin and Support roles cannot be modified");
     return null;
   }
 
@@ -144,7 +144,7 @@ const getRoles = async (req, res) => {
   const pageNum = Math.max(parseInt(page, 10) || 1, 1);
   const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
 
-  // An organization has few roles: Default Admin, then Support, then custom roles by name.
+  // An organization has few roles: Network Admin, then Support, then custom roles by name.
   const order = { [ROLE_TYPES.DEFAULT_ADMIN]: 0, [ROLE_TYPES.SUPPORT]: 1, [ROLE_TYPES.CUSTOM]: 2 };
   const all = (await Role.find(query)).sort(
     (a, b) => order[a.type] - order[b.type] || a.name.localeCompare(b.name)

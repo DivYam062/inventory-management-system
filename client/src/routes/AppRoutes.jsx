@@ -55,7 +55,7 @@ const ORGANIZATION_PAGES = {
 const organizationPages = flattenNavigation(ORGANIZATION_NAVIGATION);
 const organizationGroups = collectNavigationGroups(ORGANIZATION_NAVIGATION);
 
-// Two separate areas: the system (Super Admin) and the organization (permission-based).
+// Two separate areas: the system (System Admin) and the organization (permission-based).
 // Organization routes live under /{companyRoute}/... and are generated from config/navigation.js,
 // each guarded by its permission, so the menu, the routes and the permissions cannot drift apart.
 const AppRoutes = () => {

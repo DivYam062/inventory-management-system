@@ -25,7 +25,7 @@ const Header = () => {
           </p>
 
           <p className="text-xs text-gray-500">
-            {isSuperAdmin ? "Super Admin" : user?.role?.name}
+            {isSuperAdmin ? "System Admin" : user?.role?.name}
           </p>
         </div>
 

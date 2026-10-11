@@ -146,7 +146,7 @@ const BrandingPreview = ({ colors, isCustom }) => {
 // Create/edit form for an organization. Rendered inside a Modal; the modal footer's submit
 // button targets this form through ORGANIZATION_FORM_ID.
 // On edit, the company route and email are read-only (the route is the organization's URL and
-// the email is its Default Admin login).
+// the email is its Network Admin login).
 const OrganizationForm = ({ organization, onSubmit, apiError = "" }) => {
   const isEdit = Boolean(organization);
 
@@ -305,7 +305,7 @@ const OrganizationForm = ({ organization, onSubmit, apiError = "" }) => {
             isRequired
             isDisabled={isEdit}
             placeholder="admin@company.com"
-            helperText={isEdit ? undefined : "Becomes the Default Admin's login email."}
+            helperText={isEdit ? undefined : "Becomes the Network Admin's login email."}
           />
           <Input
             label="Phone Number"
@@ -331,7 +331,7 @@ const OrganizationForm = ({ organization, onSubmit, apiError = "" }) => {
 
       {!isEdit && (
         <FormSection
-          title="Default Admin"
+          title="Network Admin"
           description="The organization's administrator signs in with the email above and this password. They can change it after signing in. A protected Support user is created for the organization automatically."
         >
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

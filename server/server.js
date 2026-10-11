@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const createSuperAdmin = require("./utils/createSuperAdmin");
 const { ensureSupportUsers } = require("./services/supportUserService");
 const migrateDeletePermission = require("./utils/migrateDeletePermission");
+const migrateRoleNames = require("./utils/migrateRoleNames");
 const Category = require("./models/Category");
 const Supplier = require("./models/Supplier");
 const Product = require("./models/Product");
@@ -17,7 +18,7 @@ const startServer = async () => {
   try {
     await createSuperAdmin();
   } catch (error) {
-    console.error(`Super Admin setup failed: ${error.message}`);
+    console.error(`System Admin setup failed: ${error.message}`);
     process.exit(1);
   }
 
@@ -48,6 +49,13 @@ const startServer = async () => {
     await migrateDeletePermission();
   } catch (error) {
     console.error(`Delete permission migration failed: ${error.message}`);
+  }
+
+  // System roles saved under an old name (Default Admin) take their current name (Network Admin).
+  try {
+    await migrateRoleNames();
+  } catch (error) {
+    console.error(`Role name migration failed: ${error.message}`);
   }
 
   // Existing organizations created before the Support user existed get one now.

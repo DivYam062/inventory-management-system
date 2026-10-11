@@ -5,7 +5,7 @@ const { buildAuthContext } = require("../services/authContextService");
 const { getConfiguration, serializeModules, serializePurchaseOrderSettings } = require("../services/configurationService");
 const { sendSuccess } = require("../utils/response");
 
-// Login for the Super Admin and all organization users. Emails are globally unique, so the
+// Login for the System Admin and all organization users. Emails are globally unique, so the
 // email alone identifies the account (and therefore the organization).
 // All credential failures return the same message so accounts cannot be probed.
 const loginUser = async (req, res) => {

@@ -31,14 +31,14 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Set only for the single system-level Super Admin. Organization users have null.
+    // Set only for the single system-level System Admin. Organization users have null.
     systemRole: {
       type: String,
       enum: [...Object.values(SYSTEM_ROLES), null],
       default: null,
     },
 
-    // Organization users belong to exactly one organization; Super Admin belongs to none.
+    // Organization users belong to exactly one organization; System Admin belongs to none.
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema(
     // issued under, so a password change signs out all earlier sessions.
     tokenVersion: { type: Number, default: 0 },
 
-    // System-created organization users (Default Admin, Support) cannot be edited or deleted.
+    // System-created organization users (Network Admin, Support) cannot be edited or deleted.
     isProtected: {
       type: Boolean,
       default: false,
@@ -70,12 +70,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Email is globally unique: one person belongs to exactly one organization (or is the Super Admin).
+// Email is globally unique: one person belongs to exactly one organization (or is the System Admin).
 // To join another organization, the existing user record has to be removed first.
 userSchema.index({ email: 1 }, { unique: true });
 
 
-// At most one Super Admin can ever exist.
+// At most one System Admin can ever exist.
 userSchema.index(
   { systemRole: 1 },
   { unique: true, partialFilterExpression: { systemRole: SYSTEM_ROLES.SUPER_ADMIN } }
@@ -84,7 +84,7 @@ userSchema.index(
 userSchema.pre("validate", function () {
   if (this.systemRole === SYSTEM_ROLES.SUPER_ADMIN) {
     if (this.organizationId || this.roleId) {
-      this.invalidate("systemRole", "Super Admin cannot belong to an organization or role");
+      this.invalidate("systemRole", "System Admin cannot belong to an organization or role");
     }
     return;
   }

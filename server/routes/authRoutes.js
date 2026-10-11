@@ -8,7 +8,7 @@ const authenticate = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // Login (system and organization users). There is no self-registration:
-// organization users are created by their organization, Super Admin by startup seeding.
+// organization users are created by their organization, System Admin by startup seeding.
 router.post("/login", loginUser);
 
 // Current session context (user, organization, permissions)

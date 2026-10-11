@@ -3,7 +3,7 @@ import { APP_NAME } from "../../config/app";
 import { buildImageUrl } from "../../utils/buildImageUrl";
 
 // Top of the sidebar. An organization with a logo shows the whole logo (never cropped); otherwise,
-// and for the Super Admin, the product name. A logo that fails to load falls back to the name.
+// and for the System Admin, the product name. A logo that fails to load falls back to the name.
 const SidebarBrand = ({ organization, isSuperAdmin }) => {
   const logoUrl = !isSuperAdmin && organization?.logo ? buildImageUrl(organization.logo) : null;
 

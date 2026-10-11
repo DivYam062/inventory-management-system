@@ -16,7 +16,7 @@ const uploadLogo = createImageUpload("logos", { maxSizeMB: 2 }).single("logo");
 
 const router = express.Router();
 
-// Organization management is system-level: Super Admin only
+// Organization management is system-level: System Admin only
 router.use(authenticate, requireSuperAdmin);
 
 router.route("/").get(getOrganizations).post(uploadLogo, createOrganization);

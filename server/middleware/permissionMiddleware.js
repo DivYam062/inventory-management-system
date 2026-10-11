@@ -3,15 +3,15 @@ const { hasPermission } = require("../services/permissionService");
 
 const forbidden = (res, message) => res.status(403).json({ success: false, message });
 
-// System-level routes (organization management, system stats). Super Admin only.
+// System-level routes (organization management, system stats). System Admin only.
 const requireSuperAdmin = (req, res, next) => {
   if (!req.isSuperAdmin) {
-    return forbidden(res, "Access denied. Super Admin privileges required.");
+    return forbidden(res, "Access denied. System Admin privileges required.");
   }
   next();
 };
 
-// Organization-level routes. Super Admin is not an organization user and has no
+// Organization-level routes. System Admin is not an organization user and has no
 // organization data access, so it is rejected here too.
 const requireOrganization = (req, res, next) => {
   if (req.isSuperAdmin || !req.organizationId) {

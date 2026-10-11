@@ -5,7 +5,7 @@ const { getConfiguration, serializeModules, serializePurchaseOrderSettings } = r
 const { sendSuccess } = require("../utils/response");
 
 // Self-service account management for the signed-in user (any role, including the protected
-// Default Admin / Support users and the Super Admin). Email, role and organization can never be
+// Network Admin / Support users and the System Admin). Email, role and organization can never be
 // changed here - or anywhere else.
 
 const MIN_PASSWORD_LENGTH = 8;

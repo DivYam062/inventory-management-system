@@ -17,7 +17,7 @@ const toList = (map, catalog) =>
 
 // Create / edit / view form for a role: a name, then the permission checklist underneath.
 // Rendered inside a Modal; the modal footer's submit button targets this form through ROLE_FORM_ID.
-// `isReadOnly` shows a role without letting anything change (the protected Default Admin / Support roles).
+// `isReadOnly` shows a role without letting anything change (the protected Network Admin / Support roles).
 const RoleForm = ({ role, catalog, onSubmit, apiError = "", isReadOnly = false }) => {
   const { can } = usePermissions();
 
