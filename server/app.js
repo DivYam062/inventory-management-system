@@ -25,7 +25,9 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 
-app.use(cors());
+// CLIENT_URL (comma-separated) limits browser access to the deployed client; unset allows any origin (local use).
+const allowedOrigins = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",").map((url) => url.trim()) : true;
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

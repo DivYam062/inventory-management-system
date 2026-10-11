@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_ORIGIN } from "../config/app";
 
 // Every successful API response is { data, meta }: data is the payload, meta is pagination
 // ({ total_page, page, per_page, current_page }) or null. Services return that envelope as is.
@@ -8,7 +9,7 @@ import axios from "axios";
 export const UNAUTHORIZED_EVENT = "auth:unauthorized";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${API_ORIGIN}/api`,
   headers: {
     "Content-Type": "application/json",
   },

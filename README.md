@@ -219,6 +219,19 @@ inventory-management-system/
 
 ---
 
+## Deploying for free
+
+Three free services: **MongoDB Atlas** (database), **Render** (API) and **Netlify** (client).
+
+1. **Database.** Create a free cluster on MongoDB Atlas and a database user, allow `0.0.0.0/0` under Network Access, and copy the connection string.
+2. **API on Render.** New -> Web Service from this repo. Root directory `server`, build command `npm install`, start command `npm start`. Add the environment variables from `server/.env.example` (`MONGODB_URI`, a strong `JWT_SECRET`, the `SUPER_ADMIN_*` and `SUPPORT_USER_*` values). Set `CLIENT_URL` to the Netlify address once you have it.
+3. **Client on Netlify.** Import the repo. Base directory `client`, build command `npm run build`, publish directory `client/dist`. The API address comes from `client/.env` (`VITE_API_URL`) - change it there, or set `VITE_API_URL` in Netlify, to point at your Render address (no trailing slash). `client/public/_redirects` makes page refreshes work on any route.
+4. Log in with the System Admin from step 2 and create an organization.
+
+Free-tier notes: the Render service sleeps after about 15 minutes without traffic, so the first request takes up to a minute to wake it. Uploaded images are stored on the server disk, which Render clears on every deploy - use Cloudinary or S3 for permanent storage.
+
+---
+
 ## Getting started
 
 **Requirements:** Node.js 18+ and a MongoDB database.
