@@ -9,19 +9,47 @@ A multi-organization inventory and warehouse system built with the MERN stack. A
 
 ## Contents
 
-1. [Key ideas](#key-ideas)
-2. [Users, roles and permissions](#users-roles-and-permissions)
-3. [The full flow](#the-full-flow)
-4. [Stock tracking](#stock-tracking)
-5. [Dashboard](#dashboard)
-6. [Logs (audit trail)](#logs-audit-trail)
-7. [Configuration](#configuration)
-8. [Menu structure](#menu-structure)
-9. [Project structure](#project-structure)
-10. [Getting started](#getting-started)
-11. [API overview](#api-overview)
-12. [Conventions](#conventions)
-13. [Known limitations](#known-limitations)
+- [Inventory Management System](#inventory-management-system)
+  - [Contents](#contents)
+  - [Live demo](#live-demo)
+  - [Key ideas](#key-ideas)
+  - [Users, roles and permissions](#users-roles-and-permissions)
+  - [The full flow](#the-full-flow)
+    - [1. Catalog (set-up)](#1-catalog-set-up)
+    - [2. Purchase Order](#2-purchase-order)
+    - [3. Gate Entry](#3-gate-entry)
+    - [4. GRN (Goods Receipt Note)](#4-grn-goods-receipt-note)
+    - [5. Putaway](#5-putaway)
+    - [6. Inventory - Stock Overview](#6-inventory---stock-overview)
+  - [Stock tracking](#stock-tracking)
+  - [Dashboard](#dashboard)
+  - [Logs (audit trail)](#logs-audit-trail)
+  - [Configuration](#configuration)
+  - [Menu structure](#menu-structure)
+  - [Project structure](#project-structure)
+  - [Deploying for free](#deploying-for-free)
+  - [Getting started](#getting-started)
+    - [1. Server](#1-server)
+    - [2. Client](#2-client)
+    - [3. First use](#3-first-use)
+  - [API overview](#api-overview)
+  - [Conventions](#conventions)
+  - [Known limitations](#known-limitations)
+
+---
+
+## Live demo
+
+- **App:** <your Netlify address>
+- **API:** https://inventory-management-system-xqlp.onrender.com
+
+The API runs on a free service that sleeps when idle, so the first request can take up to a minute.
+
+| User | Email | Password | What it shows |
+| --- | --- | --- | --- |
+| Platform user (System Admin) | `divyamrauthan002@gmail.com` | `Divyam@123` | Creates and manages organizations |
+| Network Admin | `divyamrauthan7@gmail.com` | `Divyam@123` | Full access inside one organization |
+| Support user | `supportuser+sila@gmail.com` | `SupportUser@123` | Full-access support account inside the organization |
 
 ---
 
