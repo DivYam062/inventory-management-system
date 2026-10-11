@@ -20,7 +20,8 @@ const PERMISSION_REGISTRY = [
   { resource: "gate-entry", label: "Gate Entry", group: "Receiving", actions: [VIEW, CREATE, EDIT] },
   { resource: "grn", label: "GRN", group: "Receiving", actions: [VIEW, CREATE, EDIT] },
   { resource: "putaway", label: "Putaway", group: "Inventory", actions: [VIEW, CREATE] },
-  { resource: "inventory", label: "Inventory", group: "Inventory", actions: [VIEW, CREATE, EDIT] },
+  // Edit increases or decreases stock by hand. Stock rows themselves are created by Putaway.
+  { resource: "inventory", label: "Inventory", group: "Inventory", actions: [VIEW, EDIT] },
   { resource: "audit-log", label: "Audit Log", group: "Logs", actions: [VIEW] },
   { resource: "configuration", label: "Configuration", group: "Settings", actions: [VIEW, EDIT] },
   { resource: "role", label: "Role", group: "Settings", actions: [VIEW, CREATE, EDIT] },

@@ -17,6 +17,7 @@ const purchaseOrderRoutes = require("./routes/purchaseOrderRoutes");
 const gateEntryRoutes = require("./routes/gateEntryRoutes");
 const grnRoutes = require("./routes/grnRoutes");
 const putawayRoutes = require("./routes/putawayRoutes");
+const inventoryRoutes = require("./routes/inventoryRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -75,13 +76,16 @@ app.use("/api/grns", grnRoutes);
 // Putaways (passed GRN goods into inventory; closed while the GRN module is off)
 app.use("/api/putaways", putawayRoutes);
 
+// Total inventory: stock per product, manual increase / decrease, history
+app.use("/api/inventory", inventoryRoutes);
+
 // Organization configuration (enabled currencies and units)
 app.use("/api/configuration", configurationRoutes);
 
 // Reference lists: /api/currencies, /api/units
 app.use("/api", referenceRoutes);
 
-// NOTE: inventory, dashboard and settings routes were
+// NOTE: dashboard and settings routes were
 // removed from the API in the authorization migration. They are rebuilt organization-scoped
 // and permission-protected in their own phases (see NEW_SYSTEM_FLOW.md).
 
