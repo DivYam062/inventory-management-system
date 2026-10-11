@@ -16,6 +16,9 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+// On/off state of the receiving modules (see Configuration). Everything is on until the server says otherwise.
+const DEFAULT_MODULES = { purchaseOrder: true, gateEntry: true, grn: true };
+
 const token = localStorage.getItem("token");
 
 const initialState = {
@@ -24,6 +27,7 @@ const initialState = {
   organization: null,
   // { resource: [actions] } - empty for Super Admin, who has no organization permissions.
   permissions: {},
+  modules: DEFAULT_MODULES,
   isSuperAdmin: false,
   token,
   isAuthenticated: !!token,
@@ -35,6 +39,7 @@ const applyContext = (state, payload) => {
   state.user = payload.user;
   state.organization = payload.organization ?? null;
   state.permissions = payload.permissions ?? {};
+  state.modules = payload.modules ?? DEFAULT_MODULES;
   state.isSuperAdmin = Boolean(payload.isSuperAdmin);
   state.isAuthenticated = true;
   state.isInitializing = false;
@@ -44,6 +49,7 @@ const clearSession = (state) => {
   state.user = null;
   state.organization = null;
   state.permissions = {};
+  state.modules = DEFAULT_MODULES;
   state.isSuperAdmin = false;
   state.token = null;
   state.isAuthenticated = false;
@@ -63,6 +69,11 @@ const authSlice = createSlice({
       state.token = action.payload.token;
 
       localStorage.setItem("token", action.payload.token);
+    },
+
+    // After the module switches are saved in Configuration, so the menu and routes follow at once.
+    setModules: (state, action) => {
+      state.modules = action.payload;
     },
 
     // After the user edits their own profile (name / phone).
@@ -92,6 +103,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, updateUser, updateToken, logout } = authSlice.actions;
+export const { setCredentials, setModules, updateUser, updateToken, logout } = authSlice.actions;
 
 export default authSlice.reducer;

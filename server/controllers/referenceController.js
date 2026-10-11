@@ -1,5 +1,5 @@
 const { CURRENCIES, UNITS } = require("../config/referenceData");
-const { getConfiguration } = require("../services/configurationService");
+const { getConfiguration, getCatalog } = require("../services/configurationService");
 const { hasPermission } = require("../services/permissionService");
 const { sendSuccess, buildMeta } = require("../utils/response");
 
@@ -7,15 +7,18 @@ const { sendSuccess, buildMeta } = require("../utils/response");
 // (a page of results plus `meta`).
 //
 // An organization user gets only what the organization has enabled in its configuration (every item
-// carries isEnabled: true). `scope=all` returns the whole system list with isEnabled set per item, for the
+// carries isEnabled: true), including the currencies / units it added itself (isCustom: true). `scope=all` returns the whole system list with isEnabled set per item, for the
 // configuration page; it needs configuration:view. Super Admin (no organization) gets the whole list.
 
-const paginate = (items, fields, configKey) => async (req, res) => {
+const paginate = (systemItems, fields, configKey) => async (req, res) => {
   const { search, page, limit, scope } = req.query;
 
   let enabled = null; // null = no organization, everything is enabled
+  let items = systemItems.map((item) => ({ ...item, isCustom: false }));
   if (req.organizationId) {
-    enabled = (await getConfiguration(req.organizationId))[configKey];
+    const configuration = await getConfiguration(req.organizationId);
+    enabled = configuration[configKey];
+    items = getCatalog(configuration)[configKey];
   }
 
   const wantsAll = scope === "all";

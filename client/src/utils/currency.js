@@ -16,9 +16,10 @@ export const formatCurrency = (amount, currencyCode = "INR") => {
       currency: currencyCode,
     }).format(amount);
   } catch {
-    return amount.toLocaleString(undefined, {
+    // Not an ISO currency (an organization can define its own, e.g. reward points): show the code.
+    return `${amount.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    });
+    })} ${currencyCode}`;
   }
 };

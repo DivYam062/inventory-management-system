@@ -8,12 +8,13 @@ import { SYSTEM_NAVIGATION, ORGANIZATION_NAVIGATION, filterNavigation } from "..
 
 const Sidebar = () => {
   const organization = useSelector((state) => state.auth.organization);
+  const modules = useSelector((state) => state.auth.modules);
   const dispatch = useDispatch();
   const { can, isSuperAdmin } = usePermissions();
 
   // Super Admin and organization users have separate navigation; organization items are
   // additionally filtered by the user's permissions.
-  const menuItems = isSuperAdmin ? SYSTEM_NAVIGATION : filterNavigation(ORGANIZATION_NAVIGATION, can);
+  const menuItems = isSuperAdmin ? SYSTEM_NAVIGATION : filterNavigation(ORGANIZATION_NAVIGATION, can, modules);
 
   const basePath = organization ? `/${organization.companyRoute}` : "";
 

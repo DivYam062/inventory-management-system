@@ -64,24 +64,28 @@ export const ORGANIZATION_NAVIGATION = [
             name: "Purchase Orders",
             path: "/inventory/operations/purchase-orders",
             permission: ["purchase-order", "view"],
+            module: "purchaseOrder",
             description: "Create and track purchase orders raised to sellers.",
           },
           {
             name: "Gate Entry",
             path: "/inventory/operations/gate-entries",
             permission: ["gate-entry", "view"],
+            module: "gateEntry",
             description: "Record goods arriving at the gate, against a purchase order or a seller and supplier.",
           },
           {
             name: "GRN",
             path: "/inventory/operations/grns",
             permission: ["grn", "view"],
+            module: "grn",
             description: "Receive goods and record the passed and failed quantities.",
           },
           {
             name: "Putaway",
             path: "/inventory/operations/putaway",
             permission: ["putaway", "view"],
+            module: "grn", // putaway moves the passed items of a GRN, so it follows the GRN module
             description: "Move the passed items of a GRN into inventory.",
           },
         ],
@@ -144,10 +148,14 @@ export const flattenNavigation = (items) =>
 export const collectNavigationGroups = (items) =>
   items.flatMap((item) => (item.children ? [item, ...collectNavigationGroups(item.children)] : []));
 
-// Drops what the user may not view; groups left with no visible children disappear too.
-export const filterNavigation = (items, can) =>
+// Drops what the user may not view, and pages of modules the organization has switched off (see
+// Configuration); groups left with no visible children disappear too.
+//   modules: { purchaseOrder, gateEntry, grn } booleans; a page with `module` shows only while it is on.
+export const filterNavigation = (items, can, modules = {}) =>
   items
-    .map((item) => (item.children ? { ...item, children: filterNavigation(item.children, can) } : item))
-    .filter((item) =>
-      item.children ? item.children.length > 0 : !item.permission || can(...item.permission)
-    );
+    .map((item) => (item.children ? { ...item, children: filterNavigation(item.children, can, modules) } : item))
+    .filter((item) => {
+      if (item.children) return item.children.length > 0;
+      if (item.module && modules[item.module] === false) return false;
+      return !item.permission || can(...item.permission);
+    });

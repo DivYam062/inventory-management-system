@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const { ENTITY_STATUS } = require("../config/constants");
-const { CURRENCY_CODES, UNIT_CODES } = require("../config/referenceData");
 
 // A Product is made under a Seller and belongs to a Category. It carries no stock quantity: stock lives
 // in Inventory (putaway and manual adjustments), so every change to it is recorded.
@@ -56,16 +55,20 @@ const productSchema = new mongoose.Schema(
       min: [0, "Price cannot be negative"],
     },
 
+    // Codes come from the organization's enabled currencies / units (system list or its own custom ones),
+    // which the controller checks.
     currency: {
       type: String,
-      enum: { values: CURRENCY_CODES, message: "Invalid currency" },
+      trim: true,
+      uppercase: true,
     },
 
     // Unit of measurement the product is stocked, bought and counted in (a code from GET /api/units).
     unit: {
       type: String,
       required: [true, "Unit of measurement is required"],
-      enum: { values: UNIT_CODES, message: "Invalid unit of measurement" },
+      trim: true,
+      uppercase: true,
     },
 
     // Public path of the uploaded image (e.g. "/uploads/products/123.png"), or null. Optional.

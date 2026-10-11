@@ -2,6 +2,7 @@ const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const { ENTITY_STATUS } = require("../config/constants");
 const { buildAuthContext } = require("../services/authContextService");
+const { getConfiguration, serializeModules } = require("../services/configurationService");
 const { sendSuccess } = require("../utils/response");
 
 // Login for the Super Admin and all organization users. Emails are globally unique, so the
@@ -42,7 +43,10 @@ const loginUser = async (req, res) => {
     return res.status(403).json({ success: false, message: "Your organization is inactive" });
   }
 
-  return sendSuccess(res, { token: generateToken(user._id, user.tokenVersion), ...auth });
+  // Organization users also get the on/off state of the receiving modules (the menu and routes follow it).
+  const modules = auth.organization ? serializeModules(await getConfiguration(auth.organization.id)) : undefined;
+
+  return sendSuccess(res, { token: generateToken(user._id, user.tokenVersion), ...auth, modules });
 };
 
 module.exports = { loginUser };

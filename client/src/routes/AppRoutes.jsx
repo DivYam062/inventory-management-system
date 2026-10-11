@@ -78,7 +78,11 @@ const AppRoutes = () => {
               return (
                 <Route
                   key={page.path}
-                  element={page.permission ? <ProtectedRoute scope="organization" permission={page.permission} /> : undefined}
+                  element={
+                    page.permission ? (
+                      <ProtectedRoute scope="organization" permission={page.permission} module={page.module} />
+                    ) : undefined
+                  }
                 >
                   <Route path={page.path.slice(1)} element={element} />
                 </Route>

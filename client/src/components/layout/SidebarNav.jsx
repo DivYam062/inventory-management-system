@@ -6,12 +6,14 @@ import { ChevronDown } from "lucide-react";
 // `basePath` is prefixed to every item path ("" for the system menu, "/{companyRoute}" for an organization).
 const isInside = (pathname, fullPath) => pathname === fullPath || pathname.startsWith(`${fullPath}/`);
 
-const itemClasses = (isActive) =>
-  `flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
-    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-  }`;
+// Top-level items are roomy; nested items are tighter so deep menus still fit the sidebar without their
+// labels wrapping.
+const itemClasses = (isActive, depth) =>
+  `flex items-center gap-3 rounded-lg text-sm font-medium transition ${
+    depth === 0 ? "px-4 py-2.5" : "px-3 py-2"
+  } ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`;
 
-const NavGroup = ({ item, basePath }) => {
+const NavGroup = ({ item, basePath, depth }) => {
   const { pathname } = useLocation();
   const Icon = item.icon;
 
@@ -27,17 +29,17 @@ const NavGroup = ({ item, basePath }) => {
         type="button"
         onClick={() => setManualOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`${itemClasses(false)} w-full ${containsCurrentPage ? "text-blue-600" : ""}`}
+        className={`${itemClasses(false, depth)} w-full ${containsCurrentPage ? "text-blue-600" : ""}`}
       >
-        {Icon && <Icon size={19} />}
-        <span className="flex-1 text-left">{item.name}</span>
+        {Icon && <Icon size={19} className="shrink-0" />}
+        <span className="flex-1 whitespace-nowrap text-left">{item.name}</span>
         <ChevronDown size={16} className={`shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
-        <div className="ml-6 mt-1 space-y-1 border-l border-gray-100 pl-3">
+        <div className={`mt-1 space-y-0.5 border-l border-gray-200 ${depth === 0 ? "ml-5 pl-2" : "ml-3 pl-2"}`}>
           {item.children.map((child) => (
-            <NavNode key={child.path} item={child} basePath={basePath} />
+            <NavNode key={child.path} item={child} basePath={basePath} depth={depth + 1} />
           ))}
         </div>
       )}
@@ -45,15 +47,15 @@ const NavGroup = ({ item, basePath }) => {
   );
 };
 
-const NavNode = ({ item, basePath }) => {
-  if (item.children) return <NavGroup item={item} basePath={basePath} />;
+const NavNode = ({ item, basePath, depth = 0 }) => {
+  if (item.children) return <NavGroup item={item} basePath={basePath} depth={depth} />;
 
   const Icon = item.icon;
 
   return (
-    <NavLink to={`${basePath}${item.path}`} className={({ isActive }) => itemClasses(isActive)}>
-      {Icon && <Icon size={19} />}
-      {item.name}
+    <NavLink to={`${basePath}${item.path}`} className={({ isActive }) => itemClasses(isActive, depth)}>
+      {Icon && <Icon size={19} className="shrink-0" />}
+      <span className="whitespace-nowrap">{item.name}</span>
     </NavLink>
   );
 };

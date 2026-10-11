@@ -7,7 +7,6 @@ const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
 const { deleteUploadedFile } = require("../middleware/uploadMiddleware");
-const { CURRENCY_CODES, UNIT_CODES } = require("../config/referenceData");
 const { getConfiguration } = require("../services/configurationService");
 
 // Products of the caller's organization. Every query is scoped by req.organizationId (taken from the
@@ -79,12 +78,13 @@ const parsePrice = (price) => {
   return { value: Math.round(value * 100) / 100 };
 };
 
-const currencyError = (currency) =>
-  typeof currency !== "string" || !CURRENCY_CODES.includes(currency) ? "Invalid currency" : null;
+// Currency / unit codes are stored uppercase.
+const normalizeCode = (code) => (typeof code === "string" ? code.trim().toUpperCase() : code);
+
+const currencyError = (currency) => (typeof currency !== "string" || !currency.trim() ? "Invalid currency" : null);
 
 const unitError = (unit) => {
   if (typeof unit !== "string" || !unit) return "Unit of measurement is required";
-  if (!UNIT_CODES.includes(unit)) return "Invalid unit of measurement";
   return null;
 };
 
@@ -135,7 +135,9 @@ const saveProduct = async (res, product) => {
 };
 
 const createProduct = async (req, res) => {
-  const { name, sku, description, price, currency, unit, status, categoryId, sellerId } = req.body;
+  const { name, sku, description, price, status, categoryId, sellerId } = req.body;
+  const currency = normalizeCode(req.body.currency);
+  const unit = normalizeCode(req.body.unit);
   const image = uploadedImagePath(req);
 
   // The image is stored by multer before this runs, so every failure path must remove it again.
@@ -260,7 +262,9 @@ const getProductById = async (req, res) => {
 };
 
 const updateProduct = async (req, res) => {
-  const { name, sku, description, price, currency, unit, status, categoryId, sellerId, removeImage } = req.body;
+  const { name, sku, description, price, status, categoryId, sellerId, removeImage } = req.body;
+  const currency = normalizeCode(req.body.currency);
+  const unit = normalizeCode(req.body.unit);
   const newImage = uploadedImagePath(req);
 
   const reject = (statusCode, message) => {

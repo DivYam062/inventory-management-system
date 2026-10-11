@@ -5,8 +5,10 @@ import { usePermissions } from "../hooks/usePermissions";
 // scope="system"       -> Super Admin only
 // scope="organization" -> organization users only (Super Admin has no organization data access)
 // permission={[resource, action]} -> additionally requires that permission
-const ProtectedRoute = ({ scope, permission }) => {
+// module="purchaseOrder" | "gateEntry" | "grn" -> additionally requires that the organization has the module on
+const ProtectedRoute = ({ scope, permission, module }) => {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const modules = useSelector((state) => state.auth.modules);
   const { can, isSuperAdmin } = usePermissions();
 
   if (!isAuthenticated) {
@@ -18,6 +20,10 @@ const ProtectedRoute = ({ scope, permission }) => {
   }
 
   if (scope === "organization" && isSuperAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  if (module && modules?.[module] === false) {
     return <Navigate to="/unauthorized" replace />;
   }
 
