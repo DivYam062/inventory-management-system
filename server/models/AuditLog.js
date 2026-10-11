@@ -22,8 +22,10 @@ const AUDIT_ACTIONS = {
 };
 
 // One line of the audit log: who did what to which record, and when. Rows are only ever added - never edited
-// or deleted - so the log is a trustworthy history. The record's number and the user's name are copied in, so
-// the entry still reads correctly after the record is deleted or the user is renamed.
+// or deleted - so the log is a trustworthy history. The record's number is copied in, so the entry still reads
+// correctly after the record is deleted. The user is shown by their CURRENT name (looked up from performedBy, so
+// a renamed user appears under the new name everywhere); the copy of the name taken at the time is only a
+// fallback for a user who has since been deleted.
 const auditLogSchema = new mongoose.Schema(
   {
     organizationId: {
@@ -50,6 +52,7 @@ const auditLogSchema = new mongoose.Schema(
     summary: { type: String, required: true, maxlength: 400 },
 
     performedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    // The name when it happened - used only if the user no longer exists.
     performedByName: { type: String },
 
     // Extra facts about the change (quantities, reason, totals, the document that caused it...).

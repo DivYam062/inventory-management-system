@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const AuditLog = require("../models/AuditLog");
+const User = require("../models/User");
 const { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = AuditLog;
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter } = require("../utils/orgScope");
@@ -20,6 +21,15 @@ const parseDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+// The user is shown by their current name. If they have been deleted, the name saved with the entry is used
+// instead (and the entry has no user id to link to).
+const serializePerformer = (entry) => {
+  const user = entry.performedBy && entry.performedBy._id ? entry.performedBy : null;
+
+  if (user) return { id: user._id, name: user.name };
+  return entry.performedByName ? { id: null, name: entry.performedByName } : null;
+};
+
 const serialize = (entry) => ({
   id: entry._id,
   entityType: entry.entityType,
@@ -29,7 +39,7 @@ const serialize = (entry) => ({
   previousStatus: entry.previousStatus,
   newStatus: entry.newStatus,
   summary: entry.summary,
-  performedBy: entry.performedBy || entry.performedByName ? { id: entry.performedBy, name: entry.performedByName } : null,
+  performedBy: serializePerformer(entry),
   meta: entry.meta,
   createdAt: entry.createdAt,
 });
@@ -48,7 +58,19 @@ const getAuditLogs = async (req, res) => {
 
   if (typeof search === "string" && search.trim()) {
     const pattern = { $regex: escapeRegex(search.trim()), $options: "i" };
-    query.$or = [{ entityNumber: pattern }, { summary: pattern }, { performedByName: pattern }];
+
+    // "Who" is matched against users' CURRENT names; the saved copy of a name is searched only for entries
+    // whose user no longer exists (otherwise a renamed user would also be found under the old name).
+    const users = await User.find({ organizationId: req.organizationId }).select("name");
+    const nameRegex = new RegExp(escapeRegex(search.trim()), "i");
+    const matching = users.filter((user) => nameRegex.test(user.name)).map((user) => user._id);
+
+    query.$or = [
+      { entityNumber: pattern },
+      { summary: pattern },
+      { performedBy: { $in: matching } },
+      { performedByName: pattern, performedBy: { $nin: users.map((user) => user._id) } },
+    ];
   }
 
   const fromDate = parseDate(from);
@@ -63,6 +85,7 @@ const getAuditLogs = async (req, res) => {
 
   const [entries, total] = await Promise.all([
     AuditLog.find(query)
+      .populate("performedBy", "name")
       .sort({ createdAt: -1, _id: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)
