@@ -2,7 +2,7 @@ const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const { ENTITY_STATUS } = require("../config/constants");
 const { buildAuthContext } = require("../services/authContextService");
-const { getConfiguration, serializeModules } = require("../services/configurationService");
+const { getConfiguration, serializeModules, serializePurchaseOrderSettings } = require("../services/configurationService");
 const { sendSuccess } = require("../utils/response");
 
 // Login for the Super Admin and all organization users. Emails are globally unique, so the
@@ -44,9 +44,11 @@ const loginUser = async (req, res) => {
   }
 
   // Organization users also get the on/off state of the receiving modules (the menu and routes follow it).
-  const modules = auth.organization ? serializeModules(await getConfiguration(auth.organization.id)) : undefined;
+  const configuration = auth.organization ? await getConfiguration(auth.organization.id) : null;
+  const modules = configuration ? serializeModules(configuration) : undefined;
+  const purchaseOrder = configuration ? serializePurchaseOrderSettings(configuration) : undefined;
 
-  return sendSuccess(res, { token: generateToken(user._id, user.tokenVersion), ...auth, modules });
+  return sendSuccess(res, { token: generateToken(user._id, user.tokenVersion), ...auth, modules, purchaseOrder });
 };
 
 module.exports = { loginUser };

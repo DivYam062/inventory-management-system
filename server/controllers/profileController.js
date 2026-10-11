@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const { serializeUser } = require("../services/authContextService");
-const { getConfiguration, serializeModules } = require("../services/configurationService");
+const { getConfiguration, serializeModules, serializePurchaseOrderSettings } = require("../services/configurationService");
 const { sendSuccess } = require("../utils/response");
 
 // Self-service account management for the signed-in user (any role, including the protected
@@ -18,11 +18,13 @@ const fail = (res, status, message) => res.status(status).json({ success: false,
 // Current session context (used by the client to restore a session from a stored token).
 const getProfile = async (req, res) => {
   // Organization users also get the on/off state of the receiving modules (the menu and routes follow it).
-  const modules = req.auth.organization
-    ? serializeModules(await getConfiguration(req.auth.organization.id))
-    : undefined;
+  const configuration = req.auth.organization ? await getConfiguration(req.auth.organization.id) : null;
 
-  return sendSuccess(res, { ...req.auth, modules });
+  return sendSuccess(res, {
+    ...req.auth,
+    modules: configuration ? serializeModules(configuration) : undefined,
+    purchaseOrder: configuration ? serializePurchaseOrderSettings(configuration) : undefined,
+  });
 };
 
 // Update your own name and phone number.

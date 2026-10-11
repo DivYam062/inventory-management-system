@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const Supplier = require("../models/Supplier");
 const Seller = require("../models/Seller");
+const PurchaseOrder = require("../models/PurchaseOrder");
+const { PURCHASE_ORDER_STATUS } = PurchaseOrder;
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -259,8 +261,20 @@ const unassignSupplier = async (req, res) => {
     return fail(res, 400, `${supplier.name} is not assigned to a seller`);
   }
 
-  // Purchase orders and gate entries that reference this supplier will need to be checked here when
-  // those modules are built.
+  // A supplier with an open purchase order (draft, issued or partly received) stays with its seller.
+  // Gate entries will need to be checked here when that module is built.
+  const openOrders = await PurchaseOrder.countDocuments({
+    supplierId: supplier._id,
+    status: { $in: [PURCHASE_ORDER_STATUS.DRAFT, PURCHASE_ORDER_STATUS.ISSUED, PURCHASE_ORDER_STATUS.PARTIALLY_RECEIVED] },
+  });
+  if (openOrders > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot unassign ${supplier.name}: ${openOrders} open purchase order${openOrders === 1 ? "" : "s"} use this supplier.`
+    );
+  }
+
   supplier.sellerId = null;
   await supplier.save();
 
@@ -271,8 +285,16 @@ const deleteSupplier = async (req, res) => {
   const supplier = await findByIdInOrg(Supplier, req, req.params.id);
   if (!supplier) return fail(res, 404, "Supplier not found");
 
-  // Purchase orders and gate entries that reference this supplier will need to be checked here when
-  // those modules are built.
+  // Gate entries will need to be checked here when that module is built.
+  const orderCount = await PurchaseOrder.countDocuments({ supplierId: supplier._id });
+  if (orderCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this supplier. ${orderCount} purchase order${orderCount === 1 ? " was" : "s were"} raised through them.`
+    );
+  }
+
   await Supplier.deleteOne({ _id: supplier._id });
 
   return sendSuccess(res, { id: supplier._id });

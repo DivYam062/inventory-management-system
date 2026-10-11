@@ -41,6 +41,10 @@ const buildAuthContext = async (user) => {
       logo: organization.logo,
       companyRoute: organization.companyRoute,
       status: organization.status,
+      // Contact details, printed on documents such as purchase orders.
+      email: organization.email,
+      phone: organization.phone,
+      address: organization.address,
     },
     isSuperAdmin: false,
     permissions: resolvePermissions(role),

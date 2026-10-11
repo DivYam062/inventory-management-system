@@ -14,6 +14,9 @@ import { ChevronDown, Loader2, X } from "lucide-react";
 // For a preselected value that is not in the first page, pass it in `initialOptions` so its
 // label can be shown.
 //
+// `disabledValues`: values that cannot be picked right now (shown greyed out as "Already added"), e.g. products
+// already on the document. The field's own current value is never disabled.
+//
 // The menu is portalled to <body> so modals, cards and table wrappers can never clip it.
 
 const MENU_MAX_HEIGHT = 300;
@@ -72,6 +75,7 @@ const Select = ({
   cacheKey,
   debounceDelay = 300,
   initialOptions = [],
+  disabledValues = [],
   className = "",
   id,
   "aria-label": ariaLabel,
@@ -254,7 +258,12 @@ const Select = ({
 
   // --- selection -----------------------------------------------------------------------
 
+  const isOptionDisabled = (option) =>
+    disabledValues.some((disabledValue) => sameValue(disabledValue, option.value)) && !isSelected(option.value);
+
   const handleSelect = (option) => {
+    if (isOptionDisabled(option)) return;
+
     setPickedOptions((previous) =>
       previous.some((o) => sameValue(o.value, option.value)) ? previous : [...previous, option]
     );
@@ -547,6 +556,7 @@ const Select = ({
                   {visibleOptions.map((option, index) => {
                     const selected = isSelected(option.value);
                     const active = index === clampedActive;
+                    const optionDisabled = isOptionDisabled(option);
 
                     return (
                       <button
@@ -554,14 +564,20 @@ const Select = ({
                         type="button"
                         role="option"
                         aria-selected={selected}
+                        aria-disabled={optionDisabled || undefined}
                         data-active={active}
                         onClick={() => handleSelect(option)}
                         onMouseEnter={() => setActiveIndex(index)}
-                        className={`block w-full px-4 py-2 text-left text-sm transition ${
-                          selected ? "font-medium text-blue-600" : "text-gray-700"
-                        } ${active ? "bg-gray-100" : selected ? "bg-blue-50" : ""}`}
+                        className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm transition ${
+                          optionDisabled
+                            ? "cursor-not-allowed text-gray-400"
+                            : selected
+                              ? "font-medium text-blue-600"
+                              : "text-gray-700"
+                        } ${active && !optionDisabled ? "bg-gray-100" : selected ? "bg-blue-50" : ""}`}
                       >
-                        {option.label}
+                        <span className="min-w-0 truncate">{option.label}</span>
+                        {optionDisabled && <span className="shrink-0 text-xs text-gray-400">Already added</span>}
                       </button>
                     );
                   })}

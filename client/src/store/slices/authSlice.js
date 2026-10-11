@@ -19,6 +19,9 @@ export const fetchCurrentUser = createAsyncThunk(
 // On/off state of the receiving modules (see Configuration). Everything is on until the server says otherwise.
 const DEFAULT_MODULES = { purchaseOrder: true, gateEntry: true, grn: true };
 
+// Purchase order settings from Configuration. While over-receiving is off, orders have no over-receiving choice.
+const DEFAULT_PURCHASE_ORDER_SETTINGS = { allowOverReceiving: false };
+
 const token = localStorage.getItem("token");
 
 const initialState = {
@@ -28,6 +31,7 @@ const initialState = {
   // { resource: [actions] } - empty for Super Admin, who has no organization permissions.
   permissions: {},
   modules: DEFAULT_MODULES,
+  purchaseOrder: DEFAULT_PURCHASE_ORDER_SETTINGS,
   isSuperAdmin: false,
   token,
   isAuthenticated: !!token,
@@ -40,6 +44,7 @@ const applyContext = (state, payload) => {
   state.organization = payload.organization ?? null;
   state.permissions = payload.permissions ?? {};
   state.modules = payload.modules ?? DEFAULT_MODULES;
+  state.purchaseOrder = payload.purchaseOrder ?? DEFAULT_PURCHASE_ORDER_SETTINGS;
   state.isSuperAdmin = Boolean(payload.isSuperAdmin);
   state.isAuthenticated = true;
   state.isInitializing = false;
@@ -50,6 +55,7 @@ const clearSession = (state) => {
   state.organization = null;
   state.permissions = {};
   state.modules = DEFAULT_MODULES;
+  state.purchaseOrder = DEFAULT_PURCHASE_ORDER_SETTINGS;
   state.isSuperAdmin = false;
   state.token = null;
   state.isAuthenticated = false;
@@ -72,8 +78,10 @@ const authSlice = createSlice({
     },
 
     // After the module switches are saved in Configuration, so the menu and routes follow at once.
+    // payload: { modules, purchaseOrder } as returned by the configuration API.
     setModules: (state, action) => {
-      state.modules = action.payload;
+      state.modules = action.payload.modules;
+      state.purchaseOrder = action.payload.purchaseOrder;
     },
 
     // After the user edits their own profile (name / phone).

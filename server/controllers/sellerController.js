@@ -1,6 +1,7 @@
 const Seller = require("../models/Seller");
 const Supplier = require("../models/Supplier");
 const Product = require("../models/Product");
+const PurchaseOrder = require("../models/PurchaseOrder");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -207,8 +208,8 @@ const updateSeller = async (req, res) => {
   return sendSuccess(res, serializeSeller(seller, relations.get(String(seller._id))));
 };
 
-// A seller that other records depend on must not be deleted. Suppliers and products are checked here; purchase
-// orders add their own check when that module is built.
+// A seller that other records depend on must not be deleted. Suppliers, products and purchase orders are checked
+// here; gate entries add their own check when that module is built.
 const deleteSeller = async (req, res) => {
   const seller = await findByIdInOrg(Seller, req, req.params.id);
   if (!seller) return fail(res, 404, "Seller not found");
@@ -228,6 +229,15 @@ const deleteSeller = async (req, res) => {
       res,
       400,
       `Cannot delete this seller. ${productCount} product${productCount === 1 ? " is" : "s are"} made under it. Delete or move them first.`
+    );
+  }
+
+  const orderCount = await PurchaseOrder.countDocuments({ sellerId: seller._id });
+  if (orderCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this seller. ${orderCount} purchase order${orderCount === 1 ? " was" : "s were"} raised to it.`
     );
   }
 

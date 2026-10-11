@@ -16,6 +16,11 @@ const serializeModules = (configuration) => ({
   grn: configuration.modules.grn,
 });
 
+// Purchase order settings as sent to the client: { allowOverReceiving }.
+const serializePurchaseOrderSettings = (configuration) => ({
+  allowOverReceiving: configuration.purchaseOrder.allowOverReceiving,
+});
+
 const CUSTOM_UNIT_GROUP = "Custom";
 
 // Everything the organization can choose from: the system lists followed by its own custom entries.
@@ -31,4 +36,4 @@ const getCatalog = (configuration) => ({
   ],
 });
 
-module.exports = { getConfiguration, getCatalog, serializeModules };
+module.exports = { getConfiguration, getCatalog, serializeModules, serializePurchaseOrderSettings };

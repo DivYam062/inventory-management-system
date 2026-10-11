@@ -101,7 +101,7 @@ const Configuration = () => {
 
       setState((previous) => ({ ...previous, config: data }));
       // The menu and routes follow the module switches straight away.
-      if (key === "modules") dispatch(setModules(data.modules));
+      if (key === "modules") dispatch(setModules({ modules: data.modules, purchaseOrder: data.purchaseOrder }));
       setVersion((previous) => ({ ...previous, [key]: previous[key] + 1 }));
     } catch (err) {
       setSaveErrors((previous) => ({ ...previous, [key]: getErrorMessage(err, "Failed to save configuration.") }));

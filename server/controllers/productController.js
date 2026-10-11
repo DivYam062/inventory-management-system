@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Seller = require("../models/Seller");
+const PurchaseOrder = require("../models/PurchaseOrder");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -339,6 +340,12 @@ const updateProduct = async (req, res) => {
     const found = await findActiveReference(Seller, "Seller", req, sellerId);
     if (found.error) return reject(400, found.error);
     newSeller = found.doc;
+
+    // A purchase order's products must all be made under the order's seller, so a product on an order
+    // cannot move to another seller.
+    if (await PurchaseOrder.exists({ "items.productId": product._id })) {
+      return reject(400, "This product is on a purchase order, so its seller cannot be changed");
+    }
   }
 
   if (name !== undefined) product.name = name;
@@ -389,8 +396,16 @@ const deleteProduct = async (req, res) => {
   const product = await findByIdInOrg(Product, req, req.params.id);
   if (!product) return fail(res, 404, "Product not found");
 
-  // Purchase orders, GRNs and inventory that reference this product will need to be checked here when
-  // those modules are built.
+  // GRNs and inventory that reference this product will need to be checked here when those modules are built.
+  const orderCount = await PurchaseOrder.countDocuments({ "items.productId": product._id });
+  if (orderCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this product. It is on ${orderCount} purchase order${orderCount === 1 ? "" : "s"}.`
+    );
+  }
+
   await Product.deleteOne({ _id: product._id });
   deleteUploadedFile(product.image);
 

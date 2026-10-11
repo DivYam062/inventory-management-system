@@ -10,7 +10,7 @@ import Button from "./Button";
 //     isOpen={open}
 //     onClose={close}
 //     variant="danger"                       // default | info | warning | danger
-//     size="md"                              // sm | md | lg | xl
+//     size="md"                              // sm | md | lg | xl | 2xl
 //     headerProps={{ heading, subHeading, icon: Trash2, customHeader, disableVariantStyle }}
 //     bodyProps={{ content, contentDescription, customContent, disableVariantStyle }}
 //     footerProps={{ primaryButton, secondaryButton, disableVariantStyle }}
@@ -28,6 +28,7 @@ const SIZE_CLASSES = {
   md: "max-w-md",
   lg: "max-w-lg",
   xl: "max-w-2xl",
+  "2xl": "max-w-4xl", // wide forms with a table inside (e.g. purchase order items)
 };
 
 const VARIANT_ICONS = {

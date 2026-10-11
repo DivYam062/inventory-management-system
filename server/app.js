@@ -13,6 +13,7 @@ const supplierRoutes = require("./routes/supplierRoutes");
 const productRoutes = require("./routes/productRoutes");
 const referenceRoutes = require("./routes/referenceRoutes");
 const configurationRoutes = require("./routes/configurationRoutes");
+const purchaseOrderRoutes = require("./routes/purchaseOrderRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -58,6 +59,9 @@ app.use("/api/suppliers", supplierRoutes);
 
 // Catalog: products (made under a seller, belong to a category, optional image)
 app.use("/api/products", productRoutes);
+
+// Purchase orders (closed while the module is switched off in Configuration)
+app.use("/api/purchase-orders", purchaseOrderRoutes);
 
 // Organization configuration (enabled currencies and units)
 app.use("/api/configuration", configurationRoutes);
