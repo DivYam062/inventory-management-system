@@ -4,7 +4,6 @@ import ChartTooltip from "./ChartTooltip";
 // Ranked horizontal bars (one series, sorted by the caller): label on the left, bar, value at the tip.
 //   items: [{ key, label, value, leading? }]   leading = optional node shown before the label (e.g. an avatar)
 //   unit:  "user" -> "1 user", "3 users"
-// Bars are thin (12px), rounded only at the data end and grown from a shared baseline.
 const BarList = ({ items, unit = "item", ariaLabel }) => {
   const { containerRef, tooltip, show, hide } = useChartTooltip();
 

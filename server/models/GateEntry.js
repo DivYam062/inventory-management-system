@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const GATE_ENTRY_STATUS = {
   PENDING: "pending", // arrived at the gate, waiting for a GRN
-  COMPLETED: "completed", // set by GRN (later phase)
+  COMPLETED: "completed",
   CANCELLED: "cancelled",
 };
 
@@ -22,12 +22,10 @@ const gateEntrySchema = new mongoose.Schema(
       index: true,
     },
 
-    // Running number per organization, e.g. GE-00001.
     gateEntryNumber: { type: String, required: true },
 
     source: { type: String, enum: Object.values(GATE_ENTRY_SOURCE), required: true },
 
-    // Only for source = purchase_order.
     purchaseOrderId: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseOrder", index: true },
 
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "Seller", required: true, index: true },
@@ -42,10 +40,8 @@ const gateEntrySchema = new mongoose.Schema(
 
     driverPhone: { type: String, trim: true, maxlength: [20, "Driver phone must be at most 20 characters"] },
 
-    // The supplier's delivery challan / invoice number.
     challanNumber: { type: String, trim: true, maxlength: [50, "Challan number must be at most 50 characters"] },
 
-    // Number of packages (boxes, cartons, ...) that arrived.
     packages: { type: Number, min: [1, "Packages must be at least 1"] },
 
     notes: { type: String, trim: true, maxlength: [500, "Notes must be at most 500 characters"] },

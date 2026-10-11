@@ -3,15 +3,8 @@ import StatusBadge from "../../../components/common/StatusBadge";
 import { buildImageUrl } from "../../../utils/buildImageUrl";
 import { formatCurrency } from "../../../utils/currency";
 import { ProductThumbnail } from "./ProductTable";
+import DetailField from "../../../components/common/DetailField";
 
-const Field = ({ label, children }) => (
-  <div>
-    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
-  </div>
-);
-
-// Read-only view of a product, shown in a modal.
 const ProductDetails = ({ product }) => (
   <div className="space-y-5">
     {product.image ? (
@@ -27,37 +20,37 @@ const ProductDetails = ({ product }) => (
     )}
 
     <dl className="grid grid-cols-1 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-2">
-      <Field label="Product Name">{product.name}</Field>
-      <Field label="SKU">{product.sku}</Field>
-      <Field label="Barcode">{product.barcode}</Field>
-      <Field label="Category">
+      <DetailField label="Product Name">{product.name}</DetailField>
+      <DetailField label="SKU">{product.sku}</DetailField>
+      <DetailField label="Barcode">{product.barcode}</DetailField>
+      <DetailField label="Category">
         {product.category && (
           <span className="inline-flex items-center gap-2">
             <Badge variant="blue">{product.category.name}</Badge>
             {product.category.status === "inactive" && <span className="text-xs text-gray-500">(inactive)</span>}
           </span>
         )}
-      </Field>
-      <Field label="Seller">
+      </DetailField>
+      <DetailField label="Seller">
         {product.seller && (
           <span>
             {product.seller.name}
             {product.seller.status === "inactive" && <span className="ml-2 text-xs text-gray-500">(inactive)</span>}
           </span>
         )}
-      </Field>
-      <Field label="Unit of Measurement">{product.unit}</Field>
-      <Field label="Price">
+      </DetailField>
+      <DetailField label="Unit of Measurement">{product.unit}</DetailField>
+      <DetailField label="Price">
         {product.price !== undefined && product.price !== null ? formatCurrency(product.price, product.currency) : null}
-      </Field>
-      <Field label="Status">
+      </DetailField>
+      <DetailField label="Status">
         <StatusBadge status={product.status} />
-      </Field>
+      </DetailField>
     </dl>
 
-    <Field label="Description">
+    <DetailField label="Description">
       {product.description && <p className="whitespace-pre-wrap">{product.description}</p>}
-    </Field>
+    </DetailField>
   </div>
 );
 

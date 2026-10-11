@@ -1,14 +1,7 @@
 import StatusBadge from "../../../components/common/StatusBadge";
 import { formatDateTime } from "../../../utils/formatDate";
+import DetailField from "../../../components/common/DetailField";
 
-const Field = ({ label, children }) => (
-  <div className="min-w-0">
-    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
-  </div>
-);
-
-// A figure with its caption (total received / passed / failed).
 const Total = ({ label, value, tone = "text-gray-900" }) => (
   <div className="rounded-lg border border-gray-200 px-4 py-3">
     <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
@@ -24,7 +17,6 @@ const SOURCE_TEXT = {
 
 const inspectedStatuses = ["inspected", "putaway_partial", "putaway_complete"];
 
-// Read-only view of a GRN (the full GRN, with items), shown in a modal.
 const GrnDetails = ({ grn }) => {
   const isInspected = inspectedStatuses.includes(grn.status);
   const hasOrder = grn.items.some((item) => item.orderedQty !== null && item.orderedQty !== undefined);
@@ -33,19 +25,19 @@ const GrnDetails = ({ grn }) => {
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-3">
-        <Field label="GRN">{grn.grnNumber}</Field>
-        <Field label="Status">
+        <DetailField label="GRN">{grn.grnNumber}</DetailField>
+        <DetailField label="Status">
           <StatusBadge status={grn.status} />
-        </Field>
-        <Field label="Received">{formatDateTime(grn.receivedAt)}</Field>
-        <Field label="Source">{SOURCE_TEXT[grn.source]}</Field>
-        <Field label="Gate Entry">{grn.gateEntry?.gateEntryNumber}</Field>
-        <Field label="Purchase Order">{grn.purchaseOrder?.poNumber}</Field>
-        <Field label="Seller">{grn.seller?.name}</Field>
-        <Field label="Supplier">{grn.supplier?.name}</Field>
-        <Field label="Challan / Invoice No.">{grn.challanNumber}</Field>
-        {grn.inspectedAt && <Field label="Inspected">{formatDateTime(grn.inspectedAt)}</Field>}
-        {grn.cancelledAt && <Field label="Cancelled">{formatDateTime(grn.cancelledAt)}</Field>}
+        </DetailField>
+        <DetailField label="Received">{formatDateTime(grn.receivedAt)}</DetailField>
+        <DetailField label="Source">{SOURCE_TEXT[grn.source]}</DetailField>
+        <DetailField label="Gate Entry">{grn.gateEntry?.gateEntryNumber}</DetailField>
+        <DetailField label="Purchase Order">{grn.purchaseOrder?.poNumber}</DetailField>
+        <DetailField label="Seller">{grn.seller?.name}</DetailField>
+        <DetailField label="Supplier">{grn.supplier?.name}</DetailField>
+        <DetailField label="Challan / Invoice No.">{grn.challanNumber}</DetailField>
+        {grn.inspectedAt && <DetailField label="Inspected">{formatDateTime(grn.inspectedAt)}</DetailField>}
+        {grn.cancelledAt && <DetailField label="Cancelled">{formatDateTime(grn.cancelledAt)}</DetailField>}
       </dl>
 
       <div className="grid grid-cols-3 gap-3">
@@ -108,7 +100,7 @@ const GrnDetails = ({ grn }) => {
         </table>
       </div>
 
-      <Field label="Notes">{grn.notes && <p className="whitespace-pre-wrap">{grn.notes}</p>}</Field>
+      <DetailField label="Notes">{grn.notes && <p className="whitespace-pre-wrap">{grn.notes}</p>}</DetailField>
     </div>
   );
 };

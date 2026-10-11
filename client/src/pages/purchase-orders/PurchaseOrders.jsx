@@ -54,7 +54,6 @@ const loadCurrencies = createOptionsLoader(getCurrencies, (currency) => ({
 
 const PurchaseOrders = () => {
   const { can } = usePermissions();
-  // The organization's name, logo and contact details head the printed document.
   const organization = useSelector((state) => state.auth.organization);
   const canCreate = can("purchase-order", "create");
   const canEdit = can("purchase-order", "edit"); // also covers issue, cancel and delete
@@ -71,7 +70,6 @@ const PurchaseOrders = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Opening an order for view / edit loads the full order (with items) first.
   const [busyId, setBusyId] = useState(null);
   const [pageError, setPageError] = useState("");
 
@@ -87,8 +85,6 @@ const PurchaseOrders = () => {
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

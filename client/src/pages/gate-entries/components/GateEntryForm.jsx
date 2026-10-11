@@ -127,7 +127,6 @@ const GateEntryForm = ({
     handleChange(event);
   };
 
-  // A different seller starts the supplier again.
   const handleSellerChange = (event) => {
     const sellerId = event.target.value;
     if (sellerId === values.sellerId) return;

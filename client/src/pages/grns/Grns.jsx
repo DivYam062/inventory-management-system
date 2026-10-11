@@ -74,7 +74,6 @@ const Grns = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Opening a GRN for view / inspection loads the full GRN first.
   const [busyId, setBusyId] = useState(null);
   const [pageError, setPageError] = useState("");
 
@@ -89,8 +88,6 @@ const Grns = () => {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

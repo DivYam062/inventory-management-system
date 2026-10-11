@@ -28,7 +28,6 @@ const STOCK_OPTIONS = [
   { value: "out_of_stock", label: "Out of Stock" },
 ];
 
-// Dropdowns load from the API only when opened, 40 at a time.
 const loadCategories = createOptionsLoader(getCategories, (category) => ({ value: category.id, label: category.name }));
 const loadSellers = createOptionsLoader(getSellers, (seller) => ({ value: seller.id, label: seller.name }));
 
@@ -58,9 +57,6 @@ const StockOverview = () => {
 
   const [historyTarget, setHistoryTarget] = useState(null);
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer. A scanned barcode
-  // typed here finds the product, because the search also matches barcodes.
   useEffect(() => {
     if (searchInput === search) return;
 

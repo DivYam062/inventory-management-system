@@ -17,10 +17,8 @@ const ActionButton = ({ icon: Icon, label, onClick, hoverClasses, isDisabled = f
   </button>
 );
 
-// Passed / failed are known only once the GRN has been inspected.
 const wasInspected = (grn) => ["inspected", "putaway_partial", "putaway_complete"].includes(grn.status);
 
-// What the GRN was made from: the gate entry, the purchase order, or nothing (direct).
 const SourceBadges = ({ grn }) => {
   if (grn.gateEntry) {
     return (

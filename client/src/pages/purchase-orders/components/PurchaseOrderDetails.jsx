@@ -1,33 +1,26 @@
 import StatusBadge from "../../../components/common/StatusBadge";
 import { formatCurrency } from "../../../utils/currency";
 import { formatDate } from "../../../utils/formatDate";
+import DetailField from "../../../components/common/DetailField";
 
-const Field = ({ label, children }) => (
-  <div className="min-w-0">
-    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
-  </div>
-);
-
-// Read-only view of a purchase order (the full order, with items), shown in a modal.
 const PurchaseOrderDetails = ({ order }) => {
   const showReceived = order.status !== "draft" && order.status !== "cancelled";
 
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-3">
-        <Field label="PO Number">{order.poNumber}</Field>
-        <Field label="Status">
+        <DetailField label="PO Number">{order.poNumber}</DetailField>
+        <DetailField label="Status">
           <StatusBadge status={order.status} />
-        </Field>
-        <Field label="Currency">{order.currency}</Field>
-        <Field label="Seller">{order.seller?.name}</Field>
-        <Field label="Supplier">{order.supplier?.name}</Field>
-        <Field label="Order Date">{formatDate(order.orderDate)}</Field>
-        <Field label="Expected Date">{order.expectedDate ? formatDate(order.expectedDate) : null}</Field>
-        <Field label="Over-receiving">{order.allowOverReceiving ? "Allowed" : "Not allowed"}</Field>
-        {order.issuedAt && <Field label="Issued">{formatDate(order.issuedAt)}</Field>}
-        {order.cancelledAt && <Field label="Cancelled">{formatDate(order.cancelledAt)}</Field>}
+        </DetailField>
+        <DetailField label="Currency">{order.currency}</DetailField>
+        <DetailField label="Seller">{order.seller?.name}</DetailField>
+        <DetailField label="Supplier">{order.supplier?.name}</DetailField>
+        <DetailField label="Order Date">{formatDate(order.orderDate)}</DetailField>
+        <DetailField label="Expected Date">{order.expectedDate ? formatDate(order.expectedDate) : null}</DetailField>
+        <DetailField label="Over-receiving">{order.allowOverReceiving ? "Allowed" : "Not allowed"}</DetailField>
+        {order.issuedAt && <DetailField label="Issued">{formatDate(order.issuedAt)}</DetailField>}
+        {order.cancelledAt && <DetailField label="Cancelled">{formatDate(order.cancelledAt)}</DetailField>}
       </dl>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -78,7 +71,7 @@ const PurchaseOrderDetails = ({ order }) => {
         </table>
       </div>
 
-      <Field label="Notes">{order.notes && <p className="whitespace-pre-wrap">{order.notes}</p>}</Field>
+      <DetailField label="Notes">{order.notes && <p className="whitespace-pre-wrap">{order.notes}</p>}</DetailField>
     </div>
   );
 };

@@ -18,7 +18,6 @@ const ACTION_ORDER = ["view", "create", "edit"];
 const ACTION_LABELS = { view: "View", create: "Create", edit: "Edit" };
 const ACTION_HINTS = { edit: "Edit also allows deleting" };
 
-// Feature name column + one fixed column per action.
 const GRID = "grid grid-cols-[minmax(7.5rem,1fr)_repeat(3,4.5rem)] items-center";
 
 const PermissionPicker = ({ catalog, value, onChange, canGrant: canGrantAction = () => true, isReadOnly = false }) => {

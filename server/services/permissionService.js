@@ -1,7 +1,6 @@
 const { FULL_ACCESS_ROLE_TYPES } = require("../config/constants");
 const { getAllPermissions, isValidPermission } = require("../config/permissions");
 
-// Resolve a role into { resource: [actions] }. Protected roles get everything.
 const resolvePermissions = (role) => {
   if (!role) return {};
   if (FULL_ACCESS_ROLE_TYPES.includes(role.type)) return getAllPermissions();

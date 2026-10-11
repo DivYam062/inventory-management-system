@@ -28,7 +28,6 @@ const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 const SELLER_FIELDS = "name status";
 
 const serializeSupplier = (supplier) => {
-  // sellerId is populated ({ _id, name, status }) when the supplier is assigned.
   const seller = supplier.sellerId && supplier.sellerId._id ? supplier.sellerId : null;
 
   return {
@@ -65,7 +64,6 @@ const phoneError = (phone) => {
   return null;
 };
 
-// Another supplier of this organization already uses the email (emails are stored lowercased).
 const emailTaken = (req, email, exceptId) =>
   Supplier.exists(
     orgFilter(req, {
@@ -74,8 +72,6 @@ const emailTaken = (req, email, exceptId) =>
     })
   );
 
-// Finds a seller a supplier may be assigned to: it must exist in the caller's organization and be active.
-// Returns { seller } or { error }.
 const findAssignableSeller = async (req, sellerId) => {
   if (!mongoose.isValidObjectId(sellerId)) return { error: "Seller not found" };
 
@@ -115,7 +111,6 @@ const createSupplier = async (req, res) => {
     return fail(res, 400, "A supplier with this email already exists");
   }
 
-  // Optionally assign to a seller right away.
   let seller = null;
   if (sellerId !== undefined && sellerId !== null && sellerId !== "") {
     const found = await findAssignableSeller(req, sellerId);
@@ -162,7 +157,6 @@ const getSuppliers = async (req, res) => {
     query.status = status;
   }
 
-  // Filter by seller, or by whether the supplier works under any seller at all.
   if (typeof sellerId === "string" && mongoose.isValidObjectId(sellerId)) {
     query.sellerId = sellerId;
   } else if (assigned === "true") {

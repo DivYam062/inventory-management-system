@@ -25,7 +25,6 @@ const GrnInspectForm = ({ grn, onSubmit, apiError = "" }) => {
   );
   const [errors, setErrors] = useState({});
 
-  // Whichever of passed / failed is typed, the other becomes the remainder of what was received.
   const setSplit = (item, field, raw) => {
     const typed = Number(raw);
     const other = field === "passed" ? "failed" : "passed";
@@ -44,7 +43,6 @@ const GrnInspectForm = ({ grn, onSubmit, apiError = "" }) => {
     setErrors({});
   };
 
-  // Running totals of what has been entered.
   const sum = (field) => roundTo3(grn.items.reduce((total, item) => total + (Number(rows[item.id]?.[field]) || 0), 0));
   const totalReceived = roundTo3(grn.items.reduce((total, item) => total + item.receivedQty, 0));
   const totalPassed = sum("passed");

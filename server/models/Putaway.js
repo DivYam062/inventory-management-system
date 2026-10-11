@@ -17,7 +17,6 @@ const putawaySchema = new mongoose.Schema(
       index: true,
     },
 
-    // Running number per organization, e.g. PUT-00001.
     putawayNumber: { type: String, required: true },
 
     grnId: { type: mongoose.Schema.Types.ObjectId, ref: "Grn", required: true, index: true },

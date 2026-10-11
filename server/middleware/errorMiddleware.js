@@ -2,35 +2,29 @@ const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log error for debugging
   console.log("Error:", err);
 
-  // Mongoose bad ObjectId
   if (err.name === "CastError") {
     const message = "Resource not found";
     error = { message, statusCode: 404 };
   }
 
-  // Mongoose validation error
   if (err.name === "ValidationError") {
     const message = Object.values(err.errors).map(val => val.message);
     error = { message, statusCode: 400 };
   }
 
-  // Mongoose duplicate key error
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
     const message = `${field} already exists`;
     error = { message, statusCode: 400 };
   }
 
-  // Multer upload errors (e.g. file too large)
   if (err.name === "MulterError") {
     const message = err.code === "LIMIT_FILE_SIZE" ? "Image must be smaller than 5MB" : err.message;
     error = { message, statusCode: 400 };
   }
 
-  // JWT errors
   if (err.name === "JsonWebTokenError") {
     const message = "Invalid token";
     error = { message, statusCode: 401 };
@@ -41,7 +35,6 @@ const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 401 };
   }
 
-  // Default error
   // notFound() sets res.statusCode to 404 before forwarding; honour it instead of defaulting to 500.
   const statusCode = error.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
   const message = error.message || "Internal server error";
@@ -53,7 +46,6 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-// 404 handler for undefined routes
 const notFound = (req, res, next) => {
   const error = new Error(`Not found - ${req.originalUrl}`);
   res.status(404);

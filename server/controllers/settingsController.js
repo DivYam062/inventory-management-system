@@ -14,7 +14,6 @@ const getOrCreateSettings = async () => {
   return settings;
 };
 
-// Get application settings
 const getSettings = async (req, res) => {
   try {
     const settings = await getOrCreateSettings();
@@ -34,7 +33,6 @@ const getSettings = async (req, res) => {
   }
 };
 
-// Update application settings (admin only)
 const updateSettings = async (req, res) => {
   try {
     const { currency } = req.body;

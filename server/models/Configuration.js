@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const { CURRENCY_CODES, UNIT_CODES } = require("../config/referenceData");
 
-// Currencies and units the organization added itself, on top of the system lists.
 const customCurrencySchema = new mongoose.Schema(
   {
     code: { type: String, required: true, trim: true, uppercase: true },
@@ -43,9 +42,7 @@ const configurationSchema = new mongoose.Schema(
       grn: { type: Boolean, default: true },
     },
 
-    // Purchase order settings (shown only while the Purchase Order module is on).
     purchaseOrder: {
-      // Whether a GRN may receive more of an item than the purchase order asked for.
       allowOverReceiving: { type: Boolean, default: false },
     },
 

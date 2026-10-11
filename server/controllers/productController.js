@@ -35,7 +35,6 @@ const uploadedImagePath = (req) => (req.file ? `${IMAGE_PUBLIC_PATH}${req.file.f
 const isValidStatus = (status) => Object.values(ENTITY_STATUS).includes(status);
 
 const serializeProduct = (product) => {
-  // categoryId / sellerId are populated ({ _id, name, status }).
   const category = product.categoryId && product.categoryId._id ? product.categoryId : null;
   const seller = product.sellerId && product.sellerId._id ? product.sellerId : null;
 
@@ -65,7 +64,6 @@ const nameError = (name) => {
   return null;
 };
 
-// Barcode is optional: undefined / "" / null mean "none". Returns { value } (uppercase, or undefined) or { error }.
 const parseBarcode = (barcode) => {
   if (barcode === undefined || barcode === null || barcode === "") return { value: undefined };
   if (typeof barcode !== "string") return { error: "Barcode is invalid" };
@@ -85,7 +83,6 @@ const skuError = (sku) => {
   return null;
 };
 
-// Multipart fields arrive as strings. Empty / missing means "no price". Returns { value } or { error }.
 const parsePrice = (price) => {
   if (price === undefined || price === null || price === "") return { value: undefined };
 
@@ -97,7 +94,6 @@ const parsePrice = (price) => {
   return { value: Math.round(value * 100) / 100 };
 };
 
-// Currency / unit codes are stored uppercase.
 const normalizeCode = (code) => (typeof code === "string" ? code.trim().toUpperCase() : code);
 
 const currencyError = (currency) => (typeof currency !== "string" || !currency.trim() ? "Invalid currency" : null);
@@ -107,8 +103,6 @@ const unitError = (unit) => {
   return null;
 };
 
-// A currency / unit that is being newly chosen must be enabled in the organization's configuration.
-// Returns an error message or null.
 const enabledError = async (req, currency, unit) => {
   const configuration = await getConfiguration(req.organizationId);
   if (currency && !configuration.currencies.includes(currency)) {
@@ -131,8 +125,6 @@ const skuTaken = (req, sku, exceptId) =>
     })
   );
 
-// A category / seller a product is being linked to must exist in the caller's organization and be
-// active. Returns { doc } or { error }.
 const findActiveReference = async (Model, label, req, id) => {
   if (!mongoose.isValidObjectId(id)) return { error: `${label} is required` };
 
@@ -258,13 +250,11 @@ const getProducts = async (req, res) => {
 
   const query = orgFilter(req);
 
-  // Name, SKU or barcode contains the text.
   if (typeof search === "string" && search.trim()) {
     const pattern = { $regex: escapeRegex(search.trim()), $options: "i" };
     query.$or = [{ name: pattern }, { sku: pattern }, { barcode: pattern }];
   }
 
-  // Exact barcode (what a scan looks up).
   if (typeof barcode === "string" && barcode.trim()) {
     query.barcode = barcode.trim().toUpperCase();
   }
@@ -363,7 +353,6 @@ const updateProduct = async (req, res) => {
   );
   if (notEnabled) return reject(400, notEnabled);
 
-  // The resulting product must not have a price without a currency.
   const finalPrice = parsedPrice ? parsedPrice.value : product.price;
   const finalCurrency = currency !== undefined ? currency || undefined : product.currency;
   if (finalPrice !== undefined && finalPrice !== null && !finalCurrency) {
@@ -430,7 +419,6 @@ const updateProduct = async (req, res) => {
   if (newCategory) product.categoryId = newCategory._id;
   if (newSeller) product.sellerId = newSeller._id;
 
-  // A new upload replaces the image; removeImage clears it. The old file is deleted after the save.
   const previousImage = product.image;
   let imageChanged = false;
 

@@ -146,7 +146,6 @@ const GrnForm = ({ sources, loadSellerOptions, loadSupplierOptions, onSubmit, ap
     if (source !== values.source) resetSource(source);
   };
 
-  // Picking a gate entry / purchase order loads its seller, supplier and items.
   const handleRefChange = async (event) => {
     const refId = event.target.value;
 
@@ -189,7 +188,6 @@ const GrnForm = ({ sources, loadSellerOptions, loadSupplierOptions, onSubmit, ap
     clearError("sellerId");
   };
 
-  // Everything still pending on the order, in one click (a full delivery).
   const fillPending = () => {
     setListed((previous) =>
       Object.fromEntries(
@@ -202,7 +200,6 @@ const GrnForm = ({ sources, loadSellerOptions, loadSupplierOptions, onSubmit, ap
     clearError("items");
   };
 
-  // One scanned code: adds 1 to the matching item (or adds the item to the list).
   const handleScan = async (rawCode) => {
     const code = rawCode.trim().toUpperCase();
     if (!code) return;
@@ -348,7 +345,6 @@ const GrnForm = ({ sources, loadSellerOptions, loadSupplierOptions, onSubmit, ap
 
   const chosenProductIds = manualRows.map((row) => row.productId).filter(Boolean);
 
-  // Total quantity entered so far, and how many items it covers.
   const entered = hasOrderItems
     ? info.items.map((item) => Number(listed[item.productId]?.receivedQty) || 0)
     : manualRows.map((row) => Number(row.receivedQty) || 0);

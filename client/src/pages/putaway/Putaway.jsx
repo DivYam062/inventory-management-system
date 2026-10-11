@@ -20,7 +20,6 @@ import { getErrorMessage } from "../../utils/getErrorMessage";
 
 const PAGE_SIZE = 10;
 
-// The seller dropdown loads from the API only when opened, 40 at a time.
 const loadAllSellers = createOptionsLoader(getSellers, (seller) => ({ value: seller.id, label: seller.name }));
 
 const Putaway = () => {
@@ -38,7 +37,6 @@ const Putaway = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Opening a putaway for view loads the full putaway (with items) first.
   const [busyId, setBusyId] = useState(null);
   const [pageError, setPageError] = useState("");
 
@@ -48,8 +46,6 @@ const Putaway = () => {
 
   const [viewTarget, setViewTarget] = useState(null);
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

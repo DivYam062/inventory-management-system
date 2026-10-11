@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const PURCHASE_ORDER_STATUS = {
   DRAFT: "draft", // being prepared; can be edited and deleted
   ISSUED: "issued", // sent to the seller; goods can now be received against it
-  PARTIALLY_RECEIVED: "partially_received", // set by GRN (later phase)
-  RECEIVED: "received", // set by GRN (later phase)
+  PARTIALLY_RECEIVED: "partially_received",
+  RECEIVED: "received",
   CANCELLED: "cancelled",
 };
 
@@ -15,7 +15,6 @@ const itemSchema = new mongoose.Schema({
   // rewrite old orders).
   unit: { type: String, required: true },
   unitPrice: { type: Number, required: true, min: [0, "Price cannot be negative"] },
-  // How much of the item has been received so far. Updated by GRN (later phase).
   receivedQuantity: { type: Number, default: 0, min: 0 },
 });
 
@@ -30,7 +29,6 @@ const purchaseOrderSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Running number per organization, e.g. PO-00001.
     poNumber: { type: String, required: true },
 
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "Seller", required: true, index: true },
@@ -41,7 +39,6 @@ const purchaseOrderSchema = new mongoose.Schema(
 
     expectedDate: { type: Date },
 
-    // Currency code (system list or the organization's own), enabled in Configuration when chosen.
     currency: { type: String, required: true, trim: true, uppercase: true },
 
     // Whether this order may receive more of an item than it asked for. Can only be turned on while the

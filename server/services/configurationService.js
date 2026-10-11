@@ -9,14 +9,12 @@ const getConfiguration = (organizationId) =>
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
   );
 
-// The on/off state of the receiving-flow modules, as sent to the client: { purchaseOrder, gateEntry, grn }.
 const serializeModules = (configuration) => ({
   purchaseOrder: configuration.modules.purchaseOrder,
   gateEntry: configuration.modules.gateEntry,
   grn: configuration.modules.grn,
 });
 
-// Purchase order settings as sent to the client: { allowOverReceiving }.
 const serializePurchaseOrderSettings = (configuration) => ({
   allowOverReceiving: configuration.purchaseOrder.allowOverReceiving,
 });

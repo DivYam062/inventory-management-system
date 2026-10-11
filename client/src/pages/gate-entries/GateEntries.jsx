@@ -79,7 +79,6 @@ const GateEntries = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Opening an entry for view / edit loads the full entry first.
   const [busyId, setBusyId] = useState(null);
   const [pageError, setPageError] = useState("");
 
@@ -95,8 +94,6 @@ const GateEntries = () => {
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

@@ -20,14 +20,12 @@ const inventoryTransactionSchema = new mongoose.Schema(
 
     previousQty: { type: Number, required: true, min: 0 },
 
-    // Positive for an increase, negative for a decrease.
     changedQty: { type: Number, required: true },
 
     newQty: { type: Number, required: true, min: 0 },
 
     source: { type: String, enum: Object.values(INVENTORY_SOURCE), required: true },
 
-    // Required for a manual adjustment.
     reason: { type: String, trim: true, maxlength: [200, "Reason must be at most 200 characters"] },
 
     // The document behind the change (the putaway), kept readable even if it is renamed later.

@@ -11,7 +11,6 @@ const TYPE_BADGES = {
   grn: { label: "GRN", variant: "green" },
 };
 
-// The first thing that has to be done, or what is being waited for.
 const NextAction = ({ tracker }) => {
   const first = tracker.actions[0];
 

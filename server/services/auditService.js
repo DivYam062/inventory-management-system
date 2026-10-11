@@ -54,7 +54,6 @@ const diffFields = (before, after, labels) =>
     display(before[key]) === display(after[key]) ? [] : [{ field, from: display(before[key]), to: display(after[key]) }]
   );
 
-// "Name: Drinks → Beverages; Status: active → inactive"
 const describeChanges = (changes) => changes.map((change) => `${change.field}: ${change.from} → ${change.to}`).join("; ");
 
 module.exports = { logAudit, logStatusChange, diffFields, describeChanges, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS };

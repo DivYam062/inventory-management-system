@@ -28,7 +28,6 @@ const Roles = () => {
   const { can } = usePermissions();
   const canCreate = can("role", "create");
   const canEdit = can("role", "edit");
-  // Edit also covers deleting a role.
   const canDelete = canEdit;
 
   const [roles, setRoles] = useState([]);
@@ -51,8 +50,6 @@ const Roles = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

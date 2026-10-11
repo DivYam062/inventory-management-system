@@ -90,7 +90,6 @@ const serializeOrder = (order, { withItems = false } = {}) => {
 };
 
 const populateOrder = (query, { withItems = false } = {}) => {
-  // The full order also carries the contact details printed on the document.
   const fields = withItems ? "name status email phone address" : "name status";
   query.populate("sellerId", fields).populate("supplierId", fields);
   if (withItems) query.populate("items.productId", "name sku image status");
@@ -99,7 +98,6 @@ const populateOrder = (query, { withItems = false } = {}) => {
 
 const loadOrder = (req, id, options) => populateOrder(findByIdInOrg(PurchaseOrder, req, id), options);
 
-// "YYYY-MM-DD" -> Date at UTC midnight, or null when it is not a real date.
 const parseDate = (value) => {
   if (typeof value !== "string" || !DATE_PATTERN.test(value)) return null;
   const date = new Date(`${value}T00:00:00.000Z`);
@@ -108,7 +106,6 @@ const parseDate = (value) => {
 
 const todayUtc = () => parseDate(new Date().toISOString().slice(0, 10));
 
-// Checks the items payload and returns { items } (normalized, productId as string) or { error }.
 const parseItems = (items) => {
   if (!Array.isArray(items) || items.length === 0) return { error: "Add at least one item" };
   if (items.length > MAX_ITEMS) return { error: `A purchase order can have at most ${MAX_ITEMS} items` };
@@ -181,7 +178,6 @@ const resolveReferences = async (req, { sellerId, supplierId, productIds, active
   return { seller, supplier, products };
 };
 
-// A currency that is being newly chosen must be enabled in the organization's configuration.
 const currencyEnabledError = async (req, currency) => {
   const configuration = await getConfiguration(req.organizationId);
   return configuration.currencies.includes(currency)
@@ -191,8 +187,6 @@ const currencyEnabledError = async (req, currency) => {
 
 const normalizeCode = (code) => (typeof code === "string" ? code.trim().toUpperCase() : code);
 
-// Validates the dates, currency and notes shared by create and update. Returns { orderDate, expectedDate }
-// (expectedDate may be undefined) or { error }.
 const parseDates = (orderDateInput, expectedDateInput) => {
   const orderDate = orderDateInput === undefined || orderDateInput === "" ? todayUtc() : parseDate(orderDateInput);
   if (!orderDate) return { error: "Order date must be a valid date (YYYY-MM-DD)" };
@@ -303,7 +297,6 @@ const getPurchaseOrders = async (req, res) => {
     query.poNumber = { $regex: escapeRegex(search.trim()), $options: "i" };
   }
 
-  // One status, or several separated by commas (e.g. "issued,partially_received").
   if (typeof status === "string") {
     const statuses = status.split(",").filter(isValidStatus);
     if (statuses.length === 1) query.status = statuses[0];
@@ -387,7 +380,6 @@ const updatePurchaseOrder = async (req, res) => {
   const overReceivingProblem = await overReceivingError(req, req.body.allowOverReceiving, order.allowOverReceiving);
   if (overReceivingProblem) return fail(res, 400, overReceivingProblem);
 
-  // Only what is being newly chosen has to be active.
   const sellerChanged = String(effectiveSellerId) !== String(order.sellerId);
   const supplierChanged = sellerChanged || String(effectiveSupplierId) !== String(order.supplierId);
   const existingProductIds = new Set(order.items.map((item) => String(item.productId)));
@@ -437,7 +429,6 @@ const updatePurchaseOrder = async (req, res) => {
   return sendSuccess(res, serializeOrder(saved, { withItems: true }));
 };
 
-// draft -> issued. The seller, supplier and every product must be active at this point.
 const issuePurchaseOrder = async (req, res) => {
   const order = await findByIdInOrg(PurchaseOrder, req, req.params.id);
   if (!order) return fail(res, 404, "Purchase order not found");

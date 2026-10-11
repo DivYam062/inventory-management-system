@@ -188,7 +188,6 @@ const getOrganizations = async (req, res) => {
     Organization.countDocuments(query),
   ]);
 
-  // One query for all user counts on this page.
   const counts = await User.aggregate([
     { $match: { organizationId: { $in: organizations.map((o) => o._id) } } },
     { $group: { _id: "$organizationId", count: { $sum: 1 } } },
@@ -250,7 +249,6 @@ const updateOrganization = async (req, res) => {
     });
   }
 
-  // A new upload replaces the logo; removeLogo clears it. The old file is deleted after the save.
   const previousLogo = organization.logo;
   let logoChanged = false;
 

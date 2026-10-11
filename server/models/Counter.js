@@ -12,7 +12,6 @@ counterSchema.index({ organizationId: 1, key: 1 }, { unique: true });
 
 const Counter = mongoose.model("Counter", counterSchema);
 
-// Atomically takes the next number for a key, starting at 1.
 Counter.nextSequence = async (organizationId, key) => {
   const counter = await Counter.findOneAndUpdate(
     { organizationId, key },

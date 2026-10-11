@@ -16,7 +16,6 @@ const PHONE_PATTERN = /^[\d+\-\s()]*$/;
 
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
 
-// Current session context (used by the client to restore a session from a stored token).
 const getProfile = async (req, res) => {
   // Organization users also get the on/off state of the receiving modules (the menu and routes follow it).
   const configuration = req.auth.organization ? await getConfiguration(req.auth.organization.id) : null;
@@ -28,7 +27,6 @@ const getProfile = async (req, res) => {
   });
 };
 
-// Update your own name and phone number.
 const updateProfile = async (req, res) => {
   const { name, phone } = req.body;
   const user = req.user;

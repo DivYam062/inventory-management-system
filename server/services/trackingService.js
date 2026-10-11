@@ -17,7 +17,6 @@ const roundTo = (value, places = 3) => {
 
 const TRACKER_TYPES = { PURCHASE_ORDER: "purchase_order", GATE_ENTRY: "gate_entry", GRN: "grn" };
 
-// Where a tracker currently is. The order is the order of the flow.
 const STAGES = {
   DRAFT: "draft", // the purchase order has not been issued
   AWAITING_DELIVERY: "awaiting_delivery", // issued, goods have not (all) arrived
@@ -38,12 +37,10 @@ const STAGE_LABELS = {
   [STAGES.CANCELLED]: "Cancelled",
 };
 
-// What each step of the stepper is called.
 const STEP_LABELS = { purchase_order: "Purchase Order", gate_entry: "Gate Entry", grn: "GRN", putaway: "Putaway" };
 
 const REMAINING_STATUSES = ["inspected", "putaway_partial"];
 
-// Passed goods of a GRN that are not yet in inventory.
 const toPutawayOf = (grn) =>
   REMAINING_STATUSES.includes(grn.status)
     ? roundTo(grn.items.reduce((sum, item) => sum + Math.max(item.passedQty - item.putawayQty, 0), 0))
@@ -62,8 +59,6 @@ const action = (key, label, target, document, permission) => ({
 const info = (key, label) => ({ key, label, target: null, documentId: null, documentNumber: null, permission: null });
 
 const stageDoc = (document, number, status, at) => ({ id: document._id, number, status, at });
-
-// ---- items -----------------------------------------------------------------------------------------------
 
 // Progress of every product: how much was ordered (purchase orders), is waiting for inspection, passed, failed,
 // put away, and still has to arrive.
@@ -127,8 +122,6 @@ const buildItems = (order, grns) => {
   });
 };
 
-// ---- the tracker -----------------------------------------------------------------------------------------
-
 // type: one of TRACKER_TYPES;  root: the root document (lean);  gateEntries: the gate entries of the flow (for a
 // gate_entry tracker that is the root itself);  grns: every GRN of the flow;  putaways: their putaways;
 // modules: { purchaseOrder, gateEntry, grn } switches.
@@ -139,7 +132,6 @@ const buildTracker = ({ type, root, gateEntries = [], grns = [], putaways = [], 
   const actions = [];
   const stages = [];
 
-  // --- Purchase order
   if (isOrder) {
     const state = root.status === "draft" ? "current" : root.status === "cancelled" ? "cancelled" : "done";
     if (root.status === "draft") actions.push(action("issue_purchase_order", `Issue purchase order ${root.poNumber}`, "purchase_order", { _id: root._id, number: root.poNumber }, ["purchase-order", "edit"]));
@@ -147,7 +139,6 @@ const buildTracker = ({ type, root, gateEntries = [], grns = [], putaways = [], 
     stages.push({ key: "purchase_order", label: STEP_LABELS.purchase_order, state, documents: [stageDoc(root, root.poNumber, root.status, root.orderDate ?? root.createdAt)] });
   }
 
-  // --- Gate entry
   if (hasGateEntryStage) {
     const entries = type === TRACKER_TYPES.GATE_ENTRY ? [root] : gateEntries;
     const pending = entries.filter((entry) => entry.status === "pending");
@@ -176,7 +167,6 @@ const buildTracker = ({ type, root, gateEntries = [], grns = [], putaways = [], 
     });
   }
 
-  // --- GRN
   {
     const pendingInspection = activeGrns.filter((grn) => grn.status === "pending_inspection");
 
@@ -200,7 +190,6 @@ const buildTracker = ({ type, root, gateEntries = [], grns = [], putaways = [], 
     });
   }
 
-  // --- Putaway
   {
     const waiting = activeGrns.filter((grn) => toPutawayOf(grn) > EPSILON);
     const anyInspected = activeGrns.some((grn) => grn.status !== "pending_inspection");
@@ -225,7 +214,6 @@ const buildTracker = ({ type, root, gateEntries = [], grns = [], putaways = [], 
     });
   }
 
-  // --- where is it now?
   const rootCancelled =
     (isOrder && root.status === "cancelled") ||
     (type === TRACKER_TYPES.GATE_ENTRY && root.status === "cancelled" && grns.length === 0) ||

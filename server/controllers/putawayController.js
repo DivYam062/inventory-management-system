@@ -89,9 +89,6 @@ const populatePutaway = (query, { detailed = false } = {}) => {
 
 const loadPutaway = (req, id, options) => populatePutaway(findByIdInOrg(Putaway, req, id), options);
 
-// ---- GRNs waiting for putaway (for the form) ------------------------------------------------------------
-
-// An inspected GRN with passed goods not yet put away.
 const eligibleGrnFilter = (req) =>
   orgFilter(req, {
     status: { $in: PUTAWAY_STATUSES },
@@ -139,7 +136,6 @@ const getPendingGrns = async (req, res) => {
   );
 };
 
-// One GRN's items with how much of each passed quantity is still to be put away.
 const getPendingGrnItems = async (req, res) => {
   const grn = await populateGrnItems(findByIdInOrg(Grn, req, req.params.grnId));
   if (!grn) return fail(res, 404, "GRN not found");
@@ -167,7 +163,6 @@ const getPendingGrnItems = async (req, res) => {
 const populateGrnItems = (query) =>
   query.populate("sellerId", "name status").populate("supplierId", "name status").populate("items.productId", "name sku barcode");
 
-// Why a GRN cannot be put away yet, or null.
 const notReady = (grn) => {
   if (grn.status === GRN_STATUS.PENDING_INSPECTION) return `${grn.grnNumber} has not been inspected yet`;
   if (grn.status === GRN_STATUS.CANCELLED) return `${grn.grnNumber} was cancelled`;
@@ -176,8 +171,6 @@ const notReady = (grn) => {
   if (grn.items.every((item) => remainingOf(item) <= EPSILON)) return `${grn.grnNumber} has no passed goods left to put away`;
   return null;
 };
-
-// ---- create ----------------------------------------------------------------------------------------------
 
 // Claims `quantity` of an item's passed goods on the GRN. Only succeeds while the item's putaway quantity stays
 // within what passed - one atomic update, so concurrent putaways cannot both take the same goods.
@@ -305,13 +298,11 @@ const createPutaway = async (req, res) => {
       performedBy: req.user._id,
     });
 
-    // The GRN is complete once all passed goods are away, otherwise partial.
     const fresh = await Grn.findById(grn._id);
     const previousGrnStatus = fresh.status;
     fresh.status = fresh.items.every((item) => remainingOf(item) <= EPSILON) ? GRN_STATUS.PUTAWAY_COMPLETE : GRN_STATUS.PUTAWAY_PARTIAL;
     await fresh.save();
 
-    // The audit trail: the putaway itself, the GRN moving on, and the stock of every product that went up.
     const totalQty = roundTo(items.reduce((sum, item) => sum + item.quantity, 0), 3);
     await logAudit(req, {
       entityType: AUDIT_ENTITY_TYPES.PUTAWAY,
@@ -347,8 +338,6 @@ const createPutaway = async (req, res) => {
     throw error;
   }
 };
-
-// ---- read ------------------------------------------------------------------------------------------------
 
 const getPutaways = async (req, res) => {
   const { search, grnId, sellerId, page, limit } = req.query;

@@ -92,8 +92,6 @@ const optionalText = (value, label, max) => {
   return { value: value.trim() };
 };
 
-// Validates the plain fields shared by create and update. `body` holds only the fields to check. Returns
-// { values } (only the fields that were present, normalized) or { error }.
 const parseDetails = (body) => {
   const values = {};
 
@@ -146,7 +144,6 @@ const parseDetails = (body) => {
   return { values };
 };
 
-// The supplier must exist in the organization, work under the seller and (when newly chosen) be active.
 const findSupplierFor = async (req, supplierId, seller, { requireActive }) => {
   if (!mongoose.isValidObjectId(supplierId)) return { error: "Select a supplier" };
 

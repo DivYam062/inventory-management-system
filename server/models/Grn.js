@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const GRN_STATUS = {
   PENDING_INSPECTION: "pending_inspection", // goods received, passed / failed not decided yet
   INSPECTED: "inspected", // passed / failed recorded (a GRN with nothing passed ends here)
-  PUTAWAY_PARTIAL: "putaway_partial", // set by Putaway (later phase)
-  PUTAWAY_COMPLETE: "putaway_complete", // set by Putaway (later phase)
+  PUTAWAY_PARTIAL: "putaway_partial",
+  PUTAWAY_COMPLETE: "putaway_complete",
   CANCELLED: "cancelled",
 };
 
@@ -16,15 +16,12 @@ const GRN_SOURCE = {
 
 const itemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-  // The product's unit of measurement when the GRN was made.
   unit: { type: String, required: true },
-  // What the purchase order asked for (null when there is no purchase order).
   orderedQty: { type: Number, default: null },
   // What arrived. receivedQty = passedQty + failedQty once inspected.
   receivedQty: { type: Number, required: true, min: [0.001, "Received quantity must be greater than 0"] },
   passedQty: { type: Number, default: 0, min: 0 },
   failedQty: { type: Number, default: 0, min: 0 },
-  // How much of the passed quantity has been put away into inventory (Putaway, later phase).
   putawayQty: { type: Number, default: 0, min: 0 },
   remarks: { type: String, trim: true, maxlength: [200, "Remarks must be at most 200 characters"] },
 });
@@ -40,7 +37,6 @@ const grnSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Running number per organization, e.g. GRN-00001.
     grnNumber: { type: String, required: true },
 
     source: { type: String, enum: Object.values(GRN_SOURCE), required: true },
@@ -55,7 +51,6 @@ const grnSchema = new mongoose.Schema(
 
     receivedAt: { type: Date, required: true },
 
-    // The supplier's delivery challan / invoice number (copied from the gate entry when there is one).
     challanNumber: { type: String, trim: true, maxlength: [50, "Challan number must be at most 50 characters"] },
 
     notes: { type: String, trim: true, maxlength: [500, "Notes must be at most 500 characters"] },

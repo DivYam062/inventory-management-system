@@ -81,7 +81,6 @@ const AppRoutes = () => {
           <Route index element={<CompanyRedirect to="/dashboard" />} />
 
           <Route element={<MainLayout />}>
-            {/* Every signed-in organization user can manage their own account. */}
             <Route path="profile" element={<Profile />} />
 
             {organizationPages.map((page) => {

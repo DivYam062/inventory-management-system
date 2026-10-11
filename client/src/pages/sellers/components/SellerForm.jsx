@@ -7,8 +7,6 @@ export const SELLER_FORM_ID = "seller-form";
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
-// Create / edit form for a seller. Rendered inside a Modal; the modal footer's submit button targets this
-// form through SELLER_FORM_ID.
 const SellerForm = ({ seller, onSubmit, apiError = "" }) => {
   const [values, setValues] = useState(() => ({
     name: seller?.name ?? "",

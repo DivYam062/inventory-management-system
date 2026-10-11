@@ -3,7 +3,6 @@ const SYSTEM_ROLES = {
   SUPER_ADMIN: "SUPER_ADMIN",
 };
 
-// Organization-level role types.
 const ROLE_TYPES = {
   DEFAULT_ADMIN: "DEFAULT_ADMIN",
   SUPPORT: "SUPPORT",

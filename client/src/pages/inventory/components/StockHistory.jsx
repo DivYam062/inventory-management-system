@@ -58,8 +58,6 @@ const columns = (unit) => [
   },
 ];
 
-// Every change to one product's stock, newest first (putaways and manual adjustments), shown in a modal.
-// Read-only: the history is never edited or deleted.
 const StockHistory = ({ row }) => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);

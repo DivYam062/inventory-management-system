@@ -25,14 +25,11 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded product images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Test route
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -40,71 +37,46 @@ app.get("/", (req, res) => {
   });
 });
 
-// Auth routes (login, session profile)
 app.use("/api/auth", authRoutes);
 
-// System routes (System Admin only)
 app.use("/api/system", systemRoutes);
 
-// Organization management (System Admin only)
 app.use("/api/organizations", organizationRoutes);
 
-// Organization users (permission-based, scoped to the caller's organization)
 app.use("/api/users", userRoutes);
 
-// Organization roles and permissions
 app.use("/api/roles", roleRoutes);
 
-// Catalog: categories
 app.use("/api/categories", categoryRoutes);
 
-// Sellers (the external organizations products and purchase orders are made against)
 app.use("/api/sellers", sellerRoutes);
 
-// Suppliers (people who work for a seller; one seller at a time)
 app.use("/api/suppliers", supplierRoutes);
 
-// Catalog: products (made under a seller, belong to a category, optional image)
 app.use("/api/products", productRoutes);
 
-// Purchase orders (closed while the module is switched off in Configuration)
 app.use("/api/purchase-orders", purchaseOrderRoutes);
 
-// Gate entries (closed while the module is switched off in Configuration)
 app.use("/api/gate-entries", gateEntryRoutes);
 
-// GRNs (closed while the module is switched off in Configuration)
 app.use("/api/grns", grnRoutes);
 
-// Putaways (passed GRN goods into inventory; closed while the GRN module is off)
 app.use("/api/putaways", putawayRoutes);
 
-// Total inventory: stock per product, manual increase / decrease, history
 app.use("/api/inventory", inventoryRoutes);
 
-// Tracking: where each purchase order / delivery is in the flow and what to do next
 app.use("/api/tracking", trackingRoutes);
 
-// Organization dashboard (only the sections the caller's role may view)
 app.use("/api/dashboard", dashboardRoutes);
 
-// Audit log: who did what to which record, and when (read-only)
 app.use("/api/audit-logs", auditLogRoutes);
 
-// Organization configuration (enabled currencies and units)
 app.use("/api/configuration", configurationRoutes);
 
-// Reference lists: /api/currencies, /api/units
 app.use("/api", referenceRoutes);
 
-// NOTE: the old settings routes were
-// removed from the API in the authorization migration. They are rebuilt organization-scoped
-// and permission-protected in their own phases (see NEW_SYSTEM_FLOW.md).
-
-// 404 handler for undefined routes
 app.use(notFound);
 
-// Error handling middleware (must be after all routes)
 app.use(errorHandler);
 
 module.exports = app;

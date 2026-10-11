@@ -179,11 +179,9 @@ export const ORGANIZATION_NAVIGATION = [
   },
 ];
 
-// All pages (leaves), in menu order.
 export const flattenNavigation = (items) =>
   items.flatMap((item) => (item.children ? flattenNavigation(item.children) : [item]));
 
-// All groups at any depth, in menu order.
 export const collectNavigationGroups = (items) =>
   items.flatMap((item) => (item.children ? [item, ...collectNavigationGroups(item.children)] : []));
 

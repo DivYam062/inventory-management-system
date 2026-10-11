@@ -10,7 +10,7 @@ const ACTIONS = {
 const { VIEW, CREATE, EDIT } = ACTIONS;
 
 // There is no separate Delete permission: whoever may EDIT a feature may also delete its records and
-// switch them active/inactive. group/label are display metadata for the (Phase 4) role editor.
+// switch them active/inactive. group/label are display metadata for the role editor.
 const PERMISSION_REGISTRY = [
   { resource: "category", label: "Category", group: "Catalog", actions: [VIEW, CREATE, EDIT] },
   { resource: "product", label: "Product", group: "Catalog", actions: [VIEW, CREATE, EDIT] },

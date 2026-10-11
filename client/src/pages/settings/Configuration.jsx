@@ -25,7 +25,6 @@ import { getErrorMessage } from "../../utils/getErrorMessage";
 // The whole list is small, so it is fetched in one request (the API cap is 100).
 const ALL = { scope: "all", limit: 100 };
 
-// Everything that differs between the two cards.
 const KINDS = {
   currencies: {
     singular: "currency",
@@ -54,7 +53,6 @@ const Configuration = () => {
 
   const [saving, setSaving] = useState(null); // "modules" | "currencies" | "units" | null
   const [saveErrors, setSaveErrors] = useState({});
-  // Bumped after a save / add / delete so the card re-reads the saved list.
   const [version, setVersion] = useState({ modules: 0, currencies: 0, units: 0 });
 
   const [addKind, setAddKind] = useState(null); // "currencies" | "units" | null
@@ -84,7 +82,6 @@ const Configuration = () => {
     load();
   }, [load]);
 
-  // After adding / deleting a custom entry the lists change, so both are read again.
   const applyChange = async (kind, config) => {
     const [currencies, units] = await Promise.all([getCurrencies(ALL), getUnits(ALL)]);
     setState({ config, currencies: currencies.data, units: units.data });

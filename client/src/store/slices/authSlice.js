@@ -93,7 +93,6 @@ const authSlice = createSlice({
       state.purchaseOrder = action.payload.purchaseOrder;
     },
 
-    // After the user edits their own profile (name / phone).
     updateUser: (state, action) => {
       state.user = action.payload;
     },

@@ -41,7 +41,6 @@ const UserForm = ({ user, loadRoleOptions, onSubmit, apiError = "" }) => {
   }));
   const [errors, setErrors] = useState({});
 
-  // The user's current role is shown by name even before the dropdown has loaded anything.
   const currentRoleOption = user?.role ? [{ value: user.role.id, label: user.role.name }] : [];
 
   const handleChange = (event) => {

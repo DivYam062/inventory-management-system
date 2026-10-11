@@ -51,13 +51,11 @@ const serializeUser = (user, role, req) => {
   };
 };
 
-// Loads a role from the caller's organization. Anything else (bad id, other organization) is "not found".
 const loadOrganizationRole = (req, roleId) => {
   if (!mongoose.isValidObjectId(roleId)) return null;
   return Role.findOne(orgFilter(req, { _id: roleId }));
 };
 
-// Returns an error message when the caller may not assign this role, otherwise null.
 const roleAssignmentError = (req, role) => {
   if (!role) return "Role not found";
 

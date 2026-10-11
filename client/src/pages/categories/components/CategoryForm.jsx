@@ -4,8 +4,6 @@ import Toggle from "../../../components/ui/Toggle";
 
 export const CATEGORY_FORM_ID = "category-form";
 
-// Create / edit form for a category. Rendered inside a Modal; the modal footer's submit button targets
-// this form through CATEGORY_FORM_ID.
 const CategoryForm = ({ category, onSubmit, apiError = "" }) => {
   const isEdit = Boolean(category);
 

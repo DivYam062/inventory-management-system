@@ -3,7 +3,6 @@ const { hasPermission } = require("../services/permissionService");
 
 const forbidden = (res, message) => res.status(403).json({ success: false, message });
 
-// System-level routes (organization management, system stats). System Admin only.
 const requireSuperAdmin = (req, res, next) => {
   if (!req.isSuperAdmin) {
     return forbidden(res, "Access denied. System Admin privileges required.");
@@ -36,7 +35,6 @@ const requirePermission = (resource, action) => {
     });
 };
 
-// Passes when the user holds at least one of the given [resource, action] pairs.
 const requireAnyPermission = (pairs) => {
   pairs.forEach(([resource, action]) => {
     if (!isValidPermission(resource, action)) {

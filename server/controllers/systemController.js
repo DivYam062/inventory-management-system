@@ -26,7 +26,6 @@ const getOrganizationsByMonth = async () => {
   });
 };
 
-// The organizations with the most users.
 const getTopOrganizationsByUsers = async () => {
   const rows = await User.aggregate([
     { $match: { organizationId: { $ne: null } } },
@@ -61,7 +60,6 @@ const getRecentOrganizations = async () => {
   }));
 };
 
-// System-level statistics for the System Admin dashboard.
 const getSystemOverview = async (req, res) => {
   const [
     totalOrganizations,

@@ -48,7 +48,6 @@ const groupBy = (items, keyOf) => {
   return groups;
 };
 
-// Loads everything that belongs to the given roots and returns [{ type, root, gateEntries, grns, putaways }].
 const loadFlows = async (req, type, roots) => {
   const organizationId = req.organizationId;
 
@@ -100,7 +99,6 @@ const ref = (map, id) => {
   return doc ? { id: doc._id, name: doc.name, status: doc.status } : null;
 };
 
-// The tracker of one flow, in the shape the API returns (without the items).
 const present = (flow, modules, { sellers, suppliers }) => {
   const tracker = buildTracker({ ...flow, modules });
 
@@ -135,7 +133,6 @@ const loadNames = async (req, roots) => {
   };
 };
 
-// Every tracker of one list type (purchase_order | direct), newest activity first.
 const loadTrackers = async (req, listType, { search, sellerId } = {}) => {
   const modules = (await getConfiguration(req.organizationId)).modules;
   const pattern = typeof search === "string" && search.trim() ? { $regex: escapeRegex(search.trim()), $options: "i" } : null;
@@ -165,7 +162,6 @@ const loadTrackers = async (req, listType, { search, sellerId } = {}) => {
 
 const listTypeOf = (value) => (value === LIST_TYPES.DIRECT ? LIST_TYPES.DIRECT : LIST_TYPES.PURCHASE_ORDER);
 
-// The list row: the tracker without its items.
 const toRow = ({ _items, ...row }) => row;
 
 const getTrackers = async (req, res) => {
@@ -186,7 +182,6 @@ const getTrackers = async (req, res) => {
   return sendSuccess(res, slice.map(toRow), { meta: buildMeta({ page: pageNum, limit: limitNum, total: trackers.length }) });
 };
 
-// How many trackers are at each stage (for the cards on the page).
 const getSummary = async (req, res) => {
   const trackers = await loadTrackers(req, listTypeOf(req.query.type), req.query);
 
@@ -198,7 +193,6 @@ const getSummary = async (req, res) => {
   return sendSuccess(res, { total: trackers.length, needsAction: trackers.filter((tracker) => tracker.needsAction).length, stages });
 };
 
-// One tracker in full: the stages with their documents, the required actions and the progress of every item.
 const getTrackerById = async (req, res) => {
   const type = ROUTE_TYPES[req.params.type];
   if (!type) return fail(res, 404, "Unknown tracking type");

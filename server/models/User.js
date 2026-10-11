@@ -31,14 +31,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Set only for the single system-level System Admin. Organization users have null.
     systemRole: {
       type: String,
       enum: [...Object.values(SYSTEM_ROLES), null],
       default: null,
     },
 
-    // Organization users belong to exactly one organization; System Admin belongs to none.
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
@@ -55,7 +53,6 @@ const userSchema = new mongoose.Schema(
     // issued under, so a password change signs out all earlier sessions.
     tokenVersion: { type: Number, default: 0 },
 
-    // System-created organization users (Network Admin, Support) cannot be edited or deleted.
     isProtected: {
       type: Boolean,
       default: false,
@@ -74,8 +71,6 @@ const userSchema = new mongoose.Schema(
 // To join another organization, the existing user record has to be removed first.
 userSchema.index({ email: 1 }, { unique: true });
 
-
-// At most one System Admin can ever exist.
 userSchema.index(
   { systemRole: 1 },
   { unique: true, partialFilterExpression: { systemRole: SYSTEM_ROLES.SUPER_ADMIN } }

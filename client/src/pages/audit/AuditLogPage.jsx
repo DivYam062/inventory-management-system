@@ -16,6 +16,7 @@ import Modal from "../../components/ui/Modal";
 import { getAuditLogs } from "../../services/auditLogService";
 import { formatDateTime } from "../../utils/formatDate";
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import DetailField from "../../components/common/DetailField";
 
 const PAGE_SIZE = 10;
 
@@ -55,7 +56,6 @@ const ACTION_LABELS = {
 const startOfDay = (value) => new Date(`${value}T00:00:00`).toISOString();
 const endOfDay = (value) => new Date(`${value}T23:59:59.999`).toISOString();
 
-// "receivedQty" -> "Received qty"
 const humanize = (key) => {
   const spaced = key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
@@ -80,15 +80,6 @@ const StatusChange = ({ entry }) => {
   );
 };
 
-const Field = ({ label, children }) => (
-  <div>
-    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
-  </div>
-);
-
-// Everything about one entry, shown in a modal. An edit lists each field that changed (before -> after); other
-// extra facts (quantities, reasons, permissions) follow as plain rows.
 const EntryDetails = ({ entry }) => {
   const action = ACTION_LABELS[entry.action];
   const { changes, ...rest } = entry.meta ?? {};
@@ -97,13 +88,13 @@ const EntryDetails = ({ entry }) => {
   return (
     <div className="space-y-5">
       <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5">
-        <Field label="When">{formatDateTime(entry.createdAt)}</Field>
-        <Field label="Done by">{entry.performedBy?.name}</Field>
-        <Field label="Record">
+        <DetailField label="When">{formatDateTime(entry.createdAt)}</DetailField>
+        <DetailField label="Done by">{entry.performedBy?.name}</DetailField>
+        <DetailField label="Record">
           <span className="font-medium">{entry.entityNumber}</span> <span className="text-gray-500">({ENTITY_LABELS[entry.entityType]})</span>
-        </Field>
-        <Field label="Action">{action ? <Badge variant={action.variant}>{action.label}</Badge> : entry.action}</Field>
-        <Field label="Status">{(entry.previousStatus || entry.newStatus) && <StatusChange entry={entry} />}</Field>
+        </DetailField>
+        <DetailField label="Action">{action ? <Badge variant={action.variant}>{action.label}</Badge> : entry.action}</DetailField>
+        <DetailField label="Status">{(entry.previousStatus || entry.newStatus) && <StatusChange entry={entry} />}</DetailField>
       </dl>
 
       <div>
@@ -173,8 +164,6 @@ const AuditLogPage = ({ group, title, description, entityTypes, actionKeys, empt
   const typeOptions = [{ value: "", label: "All Records" }, ...entityTypes.map((value) => ({ value, label: ENTITY_LABELS[value] }))];
   const actionOptions = [{ value: "", label: "All Actions" }, ...actionKeys.map((value) => ({ value, label: ACTION_LABELS[value].label }))];
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

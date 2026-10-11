@@ -36,8 +36,6 @@ const serializeSeller = (seller, counts = {}) => ({
 
 const isValidStatus = (status) => Object.values(ENTITY_STATUS).includes(status);
 
-// How many suppliers work under, and products are made under, each of the given sellers.
-// Returns a Map of seller id -> { supplierCount, productCount }.
 const countSellerRelations = async (sellerIds) => {
   const groupBySeller = (Model) =>
     Model.aggregate([
@@ -57,7 +55,6 @@ const countSellerRelations = async (sellerIds) => {
   return result;
 };
 
-// Returns an error message for a bad seller name, otherwise null.
 const nameError = async (req, name, exceptId) => {
   if (typeof name !== "string" || !name.trim()) return "Seller name is required";
   if (name.trim().length > 100) return "Seller name must be at most 100 characters";
@@ -72,14 +69,12 @@ const nameError = async (req, name, exceptId) => {
   return duplicate ? "A seller with this name already exists" : null;
 };
 
-// Returns an error message for a bad seller email, otherwise null. The email is required.
 const emailError = (email) => {
   if (typeof email !== "string" || !email.trim()) return "Seller email is required";
   if (!EMAIL_PATTERN.test(email.trim())) return "Enter a valid email address";
   return null;
 };
 
-// Returns an error message for a bad phone number, otherwise null. Empty / missing is fine.
 const phoneError = (phone) => {
   if (phone === undefined || phone === null || phone === "") return null;
   if (typeof phone !== "string" || phone.length > 20 || !PHONE_PATTERN.test(phone)) {

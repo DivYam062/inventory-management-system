@@ -102,7 +102,6 @@ const PurchaseOrderForm = ({
     clearError(name);
   };
 
-  // Supplier and items depend on the seller, so a different seller starts them again.
   const handleSellerChange = (event) => {
     const sellerId = event.target.value;
     if (sellerId === values.sellerId) return;
@@ -126,7 +125,6 @@ const PurchaseOrderForm = ({
       const currency = values.currency || product.currency || "";
       if (!values.currency && product.currency) setValues((previous) => ({ ...previous, currency: product.currency }));
 
-      // Suggest the product's own price when it is in the order's currency.
       if (product.price !== undefined && product.price !== null && product.currency === currency) {
         changes.unitPrice = String(product.price);
       }
@@ -182,7 +180,6 @@ const PurchaseOrderForm = ({
     });
   };
 
-  // Products already on the order cannot be picked again.
   const chosenProductIds = rows.map((row) => row.productId).filter(Boolean);
 
   const total = rows.reduce((sum, row) => sum + lineTotal(row), 0);

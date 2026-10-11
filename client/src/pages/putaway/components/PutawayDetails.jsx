@@ -1,25 +1,18 @@
 import StatusBadge from "../../../components/common/StatusBadge";
 import { formatDateTime } from "../../../utils/formatDate";
+import DetailField from "../../../components/common/DetailField";
 
-const Field = ({ label, children }) => (
-  <div className="min-w-0">
-    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1 wrap-break-word text-sm text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
-  </div>
-);
-
-// Read-only view of a putaway (the full putaway, with items), shown in a modal.
 const PutawayDetails = ({ putaway }) => (
   <div className="space-y-6">
     <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-3">
-      <Field label="Putaway">{putaway.putawayNumber}</Field>
-      <Field label="GRN">{putaway.grn?.grnNumber}</Field>
-      <Field label="GRN Status">{putaway.grn && <StatusBadge status={putaway.grn.status} />}</Field>
-      <Field label="Seller">{putaway.seller?.name}</Field>
-      <Field label="Supplier">{putaway.supplier?.name}</Field>
-      <Field label="Put Away">{formatDateTime(putaway.putawayAt)}</Field>
-      <Field label="Put Away By">{putaway.performedBy?.name}</Field>
-      <Field label="Total Quantity">{putaway.totalQty}</Field>
+      <DetailField label="Putaway">{putaway.putawayNumber}</DetailField>
+      <DetailField label="GRN">{putaway.grn?.grnNumber}</DetailField>
+      <DetailField label="GRN Status">{putaway.grn && <StatusBadge status={putaway.grn.status} />}</DetailField>
+      <DetailField label="Seller">{putaway.seller?.name}</DetailField>
+      <DetailField label="Supplier">{putaway.supplier?.name}</DetailField>
+      <DetailField label="Put Away">{formatDateTime(putaway.putawayAt)}</DetailField>
+      <DetailField label="Put Away By">{putaway.performedBy?.name}</DetailField>
+      <DetailField label="Total Quantity">{putaway.totalQty}</DetailField>
     </dl>
 
     <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -48,7 +41,7 @@ const PutawayDetails = ({ putaway }) => (
       </table>
     </div>
 
-    <Field label="Notes">{putaway.notes && <p className="whitespace-pre-wrap">{putaway.notes}</p>}</Field>
+    <DetailField label="Notes">{putaway.notes && <p className="whitespace-pre-wrap">{putaway.notes}</p>}</DetailField>
   </div>
 );
 

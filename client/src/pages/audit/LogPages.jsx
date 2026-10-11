@@ -1,8 +1,5 @@
 import AuditLogPage from "./AuditLogPage";
 
-// The four pages under Logs. Each is the same page showing one group of records (the group decides what the API
-// returns; the record types and actions only shape the filters).
-
 export const InventoryLogs = () => (
   <AuditLogPage
     group="inventory"

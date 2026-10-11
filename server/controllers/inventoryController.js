@@ -36,7 +36,6 @@ const stockStatus = (quantity) => (quantity > 0 ? "in_stock" : "out_of_stock");
 
 const toObjectId = (value) => new mongoose.Types.ObjectId(String(value));
 
-// One stock row: { id, product: {...}, quantity, status, updatedAt }.
 const serializeRow = (row, categories, sellers) => {
   const product = row.product;
   const category = categories.get(String(product.categoryId));
@@ -61,7 +60,6 @@ const serializeRow = (row, categories, sellers) => {
   };
 };
 
-// Category and seller names for a set of products.
 const loadNames = async (req, products) => {
   const [categories, sellers] = await Promise.all([
     Category.find(orgFilter(req, { _id: { $in: [...new Set(products.map((p) => String(p.categoryId)))] } })).select("name"),
@@ -74,7 +72,6 @@ const loadNames = async (req, products) => {
   };
 };
 
-// Stock rows joined with their product, filtered and sorted by product name.
 const buildListPipeline = (req, { search, categoryId, sellerId, stock }) => {
   const productMatch = {};
 
@@ -121,7 +118,6 @@ const getInventory = async (req, res) => {
   });
 };
 
-// How many products have stock records, and how many of them are in / out of stock (for the page's cards).
 const getSummary = async (req, res) => {
   const [counts] = await Inventory.aggregate([
     { $match: { organizationId: toObjectId(req.organizationId) } },
@@ -140,7 +136,6 @@ const getSummary = async (req, res) => {
   return sendSuccess(res, { products, inStock, outOfStock: products - inStock });
 };
 
-// The stock row of one product (by product id), or null.
 const findStock = async (req, productId) => {
   if (!mongoose.isValidObjectId(productId)) return null;
 
@@ -179,7 +174,6 @@ const serializeTransaction = (transaction) => {
   };
 };
 
-// Every change to one product's stock, newest first.
 const getTransactions = async (req, res) => {
   const stock = await findStock(req, req.params.productId);
   if (!stock) return fail(res, 404, "No stock found for this product");

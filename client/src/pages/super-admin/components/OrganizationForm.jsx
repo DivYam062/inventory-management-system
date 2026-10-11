@@ -43,7 +43,6 @@ const buildInitialValues = (organization) => ({
 
 const FormSection = ({ title, description, action, children }) => (
   <section className="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
-    {/* The action (e.g. a toggle) shares the title's row so the two stay vertically aligned. */}
     <div className="flex min-h-6 items-center justify-between gap-4">
       <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
       {action}
@@ -96,8 +95,6 @@ const ColorField = ({ label, name, value, onChange, error, isDisabled }) => (
   </div>
 );
 
-// Small mock of the organization's UI in the chosen colors, so the choice can be judged before saving.
-// With custom colors off it shows the system defaults, which is what the organization would get.
 const BrandingPreview = ({ colors, isCustom }) => {
   const safe = Object.fromEntries(
     BRANDING_COLOR_FIELDS.map(({ key }) => [
@@ -162,7 +159,6 @@ const OrganizationForm = ({ organization, onSubmit, apiError = "" }) => {
     setValues((prev) => {
       const next = { ...prev, [name]: value };
 
-      // Suggest a company route from the name until the user types their own.
       if (name === "name" && !isEdit && !routeEdited) next.companyRoute = slugify(value);
 
       return next;

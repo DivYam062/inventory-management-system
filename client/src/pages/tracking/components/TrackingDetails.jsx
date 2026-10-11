@@ -6,6 +6,7 @@ import FlowStepper from "./FlowStepper";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { actionPath, actionPageName } from "../../../utils/trackingLinks";
 import { formatDateTime } from "../../../utils/formatDate";
+import DetailField from "../../../components/common/DetailField";
 
 const ITEM_STATUS = {
   not_arrived: { label: "Not arrived", variant: "gray" },
@@ -15,20 +16,12 @@ const ITEM_STATUS = {
   in_inventory: { label: "In inventory", variant: "green" },
 };
 
-const Field = ({ label, children }) => (
-  <div>
-    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-    <dd className="mt-1.5 break-words text-sm font-medium text-gray-900">{children || <span className="text-gray-400">—</span>}</dd>
-  </div>
-);
-
 const Qty = ({ value, unit, tone = "" }) => (
   <span className={`whitespace-nowrap tabular-nums ${tone}`}>
     {value} <span className="text-xs text-gray-400">{unit}</span>
   </span>
 );
 
-// What has to be done next. An action the user may do links to its page; one they may not is shown as text.
 const Actions = ({ tracker, companyRoute, onNavigate }) => {
   const { can } = usePermissions();
 
@@ -75,20 +68,18 @@ const Actions = ({ tracker, companyRoute, onNavigate }) => {
   );
 };
 
-// The full picture of one tracker, shown in a modal: where it is, what to do next, the documents of every step,
-// and how every item is doing.
 const TrackingDetails = ({ tracker, companyRoute, onNavigate }) => {
   const hasOrder = tracker.items.some((item) => item.orderedQty !== null);
 
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:grid-cols-4">
-        <Field label="Reference">{tracker.number}</Field>
-        <Field label="Status">
+        <DetailField label="Reference">{tracker.number}</DetailField>
+        <DetailField label="Status">
           <StatusBadge status={tracker.stage} label={tracker.stageLabel} />
-        </Field>
-        <Field label="Seller">{tracker.seller?.name}</Field>
-        <Field label="Supplier">{tracker.supplier?.name}</Field>
+        </DetailField>
+        <DetailField label="Seller">{tracker.seller?.name}</DetailField>
+        <DetailField label="Supplier">{tracker.supplier?.name}</DetailField>
       </dl>
 
       <section aria-label="Flow" className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 px-4 py-5">

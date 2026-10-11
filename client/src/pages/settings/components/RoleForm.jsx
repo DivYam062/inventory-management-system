@@ -42,7 +42,6 @@ const RoleForm = ({ role, catalog, onSubmit, apiError = "", isReadOnly = false }
   const selectedCount = Object.values(permissions).reduce((sum, actions) => sum + actions.length, 0);
   const totalCount = catalog.reduce((sum, feature) => sum + feature.actions.length, 0);
 
-  // Everything the user is allowed to grant (anything already selected that they cannot change stays).
   const selectAll = () =>
     setPermissions(
       Object.fromEntries(

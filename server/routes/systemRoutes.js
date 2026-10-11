@@ -7,7 +7,6 @@ const { requireSuperAdmin } = require("../middleware/permissionMiddleware");
 
 const router = express.Router();
 
-// System-level routes: System Admin only
 router.use(authenticate, requireSuperAdmin);
 
 router.get("/overview", getSystemOverview);

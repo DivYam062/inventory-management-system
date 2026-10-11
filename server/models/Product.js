@@ -20,7 +20,6 @@ const productSchema = new mongoose.Schema(
       maxlength: [150, "Product name must be at most 150 characters"],
     },
 
-    // Stock keeping unit, stored uppercase. Unique per organization, ignoring case.
     sku: {
       type: String,
       required: [true, "SKU is required"],
@@ -29,7 +28,6 @@ const productSchema = new mongoose.Schema(
       maxlength: [50, "SKU must be at most 50 characters"],
     },
 
-    // The code printed on the item, read by a barcode scanner. Optional; unique per organization when set.
     barcode: {
       type: String,
       trim: true,
@@ -57,7 +55,6 @@ const productSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Unit price. Optional; when set it has a currency (a code from GET /api/currencies).
     price: {
       type: Number,
       min: [0, "Price cannot be negative"],
@@ -71,7 +68,6 @@ const productSchema = new mongoose.Schema(
       uppercase: true,
     },
 
-    // Unit of measurement the product is stocked, bought and counted in (a code from GET /api/units).
     unit: {
       type: String,
       required: [true, "Unit of measurement is required"],
@@ -79,7 +75,6 @@ const productSchema = new mongoose.Schema(
       uppercase: true,
     },
 
-    // Public path of the uploaded image (e.g. "/uploads/products/123.png"), or null. Optional.
     image: {
       type: String,
       default: null,

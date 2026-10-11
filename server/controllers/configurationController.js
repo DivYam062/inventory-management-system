@@ -26,8 +26,6 @@ const serialize = (configuration) => ({
   updatedAt: configuration.updatedAt,
 });
 
-// Validates a submitted list of codes against what the organization can choose from.
-// Returns { codes } or { error }.
 const parseCodes = (value, label, validCodes) => {
   if (!Array.isArray(value) || value.some((code) => typeof code !== "string")) {
     return { error: `${label} must be a list of codes` };
@@ -42,7 +40,6 @@ const parseCodes = (value, label, validCodes) => {
   return { codes };
 };
 
-// Codes among `codes` that products of the organization still use, as [{ code, count }].
 const codesInUse = async (organizationId, field, codes) => {
   if (codes.length === 0) return [];
 
@@ -56,8 +53,6 @@ const codesInUse = async (organizationId, field, codes) => {
 const describeInUse = (inUse, action, label) =>
   `Cannot ${action} ${inUse.map((row) => `${row.code} (${row.count} product${row.count === 1 ? "" : "s"})`).join(", ")}: still used as ${label}.`;
 
-// One line of the audit log about the organization's configuration. `topic` names what changed ("Modules",
-// "Currencies", ...).
 const logConfiguration = (req, configuration, { topic, action = AUDIT_ACTIONS.UPDATED, summary, meta }) =>
   logAudit(req, {
     entityType: AUDIT_ENTITY_TYPES.CONFIGURATION,
@@ -69,7 +64,6 @@ const logConfiguration = (req, configuration, { topic, action = AUDIT_ACTIONS.UP
 
 const MODULE_LABELS = { purchaseOrder: "Purchase Orders", gateEntry: "Gate Entry", grn: "GRN" };
 
-// "+USD, +EUR, -JPY" for the codes added to / removed from an enabled list.
 const listChange = (before, after) => {
   const added = after.filter((code) => !before.includes(code)).map((code) => `+${code}`);
   const removed = before.filter((code) => !after.includes(code)).map((code) => `-${code}`);
@@ -92,7 +86,6 @@ const updateConfiguration = async (req, res) => {
 
   const updates = {};
 
-  // What it was, to describe what changes.
   const before = {
     modules: { purchaseOrder: configuration.modules.purchaseOrder, gateEntry: configuration.modules.gateEntry, grn: configuration.modules.grn },
     allowOverReceiving: configuration.purchaseOrder.allowOverReceiving,
@@ -142,7 +135,6 @@ const updateConfiguration = async (req, res) => {
     updates.units = allCodes.filter((code) => parsed.codes.includes(code));
   }
 
-  // Partial updates: only the keys that were sent change.
   if (modules) {
     Object.entries(modules).forEach(([key, value]) => {
       configuration.modules[key] = value;
@@ -192,7 +184,6 @@ const updateConfiguration = async (req, res) => {
   return sendSuccess(res, serialize(configuration));
 };
 
-// Shared by the add endpoints. Returns an error message for a bad code / name, otherwise null.
 const entryError = (code, name, takenCodes, label) => {
   if (typeof code !== "string" || !code.trim()) return `${label} code is required`;
   if (!CODE_PATTERN.test(code.trim().toUpperCase())) {
@@ -255,7 +246,6 @@ const addUnit = async (req, res) => {
   return sendSuccess(res, serialize(configuration), { status: 201 });
 };
 
-// Builds the delete handler for custom currencies / units.
 const deleteCustom = ({ customKey, enabledKey, productField, label, inUseLabel, systemCodes }) => async (req, res) => {
   const code = String(req.params.code || "").toUpperCase();
   const configuration = await getConfiguration(req.organizationId);

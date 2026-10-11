@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// What the audit log records about: the kinds of record whose changes are kept.
 const AUDIT_ENTITY_TYPES = {
   PURCHASE_ORDER: "purchase_order",
   GATE_ENTRY: "gate_entry",
@@ -16,7 +15,6 @@ const AUDIT_ENTITY_TYPES = {
   ROLE: "role",
 };
 
-// The audit log is shown on four pages; each shows the records of one group.
 const AUDIT_GROUPS = {
   inventory: [
     AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
@@ -69,18 +67,15 @@ const auditLogSchema = new mongoose.Schema(
 
     action: { type: String, enum: Object.values(AUDIT_ACTIONS), required: true },
 
-    // For a status change: where the record was and where it went.
     previousStatus: { type: String },
     newStatus: { type: String },
 
-    // One readable sentence: what happened.
     summary: { type: String, required: true, maxlength: 400 },
 
     performedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     // The name when it happened - used only if the user no longer exists.
     performedByName: { type: String },
 
-    // Extra facts about the change (quantities, reason, totals, the document that caused it...).
     meta: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: { createdAt: true, updatedAt: false } }

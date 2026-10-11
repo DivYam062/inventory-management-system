@@ -22,8 +22,8 @@ const { logAudit, logStatusChange, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require
 // (taken from the token, never from the request). Permissions: grn:view to read, grn:create to receive goods,
 // grn:edit to inspect or cancel. The whole API is closed while the GRN module is switched off.
 //
-// Flow: receive (pending inspection) -> inspect (passed / failed per item) -> putaway of the passed quantity
-// (later phase). A GRN is never deleted; before inspection it can be cancelled.
+// Flow: receive (pending inspection) -> inspect (passed / failed per item) -> putaway of the passed quantity.
+// A GRN is never deleted; before inspection it can be cancelled.
 //
 // What a GRN does to other records:
 //   - purchase order: the received quantity of each item goes up when goods are received (so two GRNs cannot
@@ -49,7 +49,6 @@ const isValidStatus = (status) => Object.values(GRN_STATUS).includes(status);
 
 const sumOf = (items, field) => roundTo(items.reduce((total, item) => total + item[field], 0), 3);
 
-// The purchase order moved to another status because of a GRN (partially received, received, back to issued...).
 const logOrderStatus = (req, order, previousStatus, cause) =>
   logStatusChange(req, {
     entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
@@ -59,7 +58,6 @@ const logOrderStatus = (req, order, previousStatus, cause) =>
     summary: `${order.poNumber} is now ${order.status.replace("_", " ")} (${cause})`,
   });
 
-// The gate entry changed status because of a GRN made from it / cancelled.
 const logEntryStatus = (req, entry, previousStatus, newStatus, cause) =>
   logStatusChange(req, {
     entityType: AUDIT_ENTITY_TYPES.GATE_ENTRY,
@@ -154,9 +152,6 @@ const parseQuantity = (value, row, label, { allowZero = false } = {}) => {
   return { value: roundTo(quantity, 3) };
 };
 
-// ---- source ----------------------------------------------------------------------------------------------
-
-// The modules the organization has on decide which sources may be used.
 const sourceAllowed = async (req, source) => {
   const configuration = await getConfiguration(req.organizationId);
   return getAllowedSources({
@@ -187,7 +182,6 @@ const findSupplierUnder = async (req, supplierId, seller) => {
   return { supplier };
 };
 
-// Resolves what the GRN is made from. Returns { seller, supplier, order, entry, challanNumber } or { error }.
 const resolveSource = async (req, body) => {
   const { source, gateEntryId, purchaseOrderId, sellerId, supplierId } = body;
 
@@ -236,7 +230,6 @@ const resolveSource = async (req, body) => {
     return { seller, supplier: found.supplier, order, entry: null };
   }
 
-  // direct
   if (!mongoose.isValidObjectId(sellerId)) return { error: "Select a seller" };
 
   const seller = await Seller.findOne(orgFilter(req, { _id: sellerId }));
@@ -249,10 +242,6 @@ const resolveSource = async (req, body) => {
   return { seller, supplier: found.supplier, order: null, entry: null };
 };
 
-// ---- create ----------------------------------------------------------------------------------------------
-
-// Checks the items against the source and returns { items } ready to store, or { error }.
-// With a purchase order every product must be on it; without one the products must be made under the seller.
 const buildItems = async (req, rawItems, { seller, order }, allowOver) => {
   if (!Array.isArray(rawItems) || rawItems.length === 0) return { error: "Add at least one item" };
   if (rawItems.length > MAX_ITEMS) return { error: `A GRN can have at most ${MAX_ITEMS} items` };
@@ -433,8 +422,6 @@ const createGrn = async (req, res) => {
   }
 };
 
-// ---- source items (for the form) -------------------------------------------------------------------------
-
 // What a GRN made from a gate entry or purchase order starts from: the seller, the supplier and - when there is
 // a purchase order - its items with how much is still to receive. Needs only grn:create, so the form works
 // without access to the purchase order pages.
@@ -482,8 +469,6 @@ const getSource = async (req, res) => {
   });
 };
 
-// ---- read ------------------------------------------------------------------------------------------------
-
 const getGrns = async (req, res) => {
   const { search, status, source, sellerId, supplierId, purchaseOrderId, gateEntryId, page, limit } = req.query;
 
@@ -522,8 +507,6 @@ const getGrnById = async (req, res) => {
 
   return sendSuccess(res, serializeGrn(grn, { detailed: true }));
 };
-
-// ---- inspect ---------------------------------------------------------------------------------------------
 
 // Records, for every item, how much passed and how much failed (together they must equal what was received).
 // The failed quantity is given back to the purchase order, so a replacement can be received against it.
@@ -607,8 +590,6 @@ const inspectGrn = async (req, res) => {
   const saved = await loadGrn(req, grn._id, { detailed: true });
   return sendSuccess(res, serializeGrn(saved, { detailed: true }));
 };
-
-// ---- cancel ----------------------------------------------------------------------------------------------
 
 // Before inspection a GRN can be cancelled (it was entered wrongly): the purchase order gets the quantity back
 // and the gate entry is pending again, ready for a new GRN. The record itself stays.

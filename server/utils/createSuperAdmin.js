@@ -13,8 +13,6 @@ const createSuperAdmin = async () => {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
   }
 
-  // Drops indexes left over from the old single-tenant schema (e.g. global unique email)
-  // and builds the organization-scoped ones.
   await User.syncIndexes();
 
   const existing = await User.findOne({ systemRole: SYSTEM_ROLES.SUPER_ADMIN });

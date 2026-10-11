@@ -9,7 +9,6 @@ const hexColor = (label) => ({
 
 const brandingSchema = new mongoose.Schema(
   {
-    // ON: the organization's own colors are used in its UI. OFF: system default colors.
     useCustomColors: { type: Boolean, default: false },
     primary: { ...hexColor("Primary color"), default: DEFAULT_BRANDING.primary },
     primaryLight: { ...hexColor("Primary light color"), default: DEFAULT_BRANDING.primaryLight },
@@ -27,7 +26,6 @@ const organizationSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // URL segment for this organization's app: /{companyRoute}/dashboard
     companyRoute: {
       type: String,
       required: [true, "Company route is required"],
@@ -58,7 +56,6 @@ const organizationSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Public path of the uploaded logo (e.g. "/uploads/logos/123.png"), or null.
     logo: {
       type: String,
       default: null,

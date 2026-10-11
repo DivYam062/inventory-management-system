@@ -35,7 +35,6 @@ import {
 import { getDashboard } from "../../services/dashboardService";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 
-// Where each figure leads (inside the organization's own address).
 const PAGES = {
   products: "/catalog/products",
   categories: "/catalog/categories",
@@ -116,7 +115,6 @@ const OrganizationDashboard = () => {
   const d = dashboard;
   const has = (key) => d.sections.includes(key);
 
-  // The headline figures, one per available section, each a link to its page.
   const cards = [
     has("tracking") && { label: "Needs action", value: d.tracking.needsAction, icon: CircleAlert, accent: "red", to: paths.tracking },
     has("purchaseOrders") && { label: "Open purchase orders", value: d.purchaseOrders.open, icon: ClipboardList, accent: "blue", to: paths.purchaseOrders },

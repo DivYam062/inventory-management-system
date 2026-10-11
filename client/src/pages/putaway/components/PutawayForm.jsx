@@ -75,13 +75,11 @@ const PutawayForm = ({ onSubmit, apiError = "" }) => {
     clearError("items");
   };
 
-  // Everything left to put away, in one click.
   const fillRemaining = () => {
     setQuantities(Object.fromEntries(grn.items.map((item) => [item.productId, item.remainingQty > 0 ? String(item.remainingQty) : ""])));
     clearError("items");
   };
 
-  // One scanned code adds 1 to the matching item.
   const handleScan = (rawCode) => {
     const code = rawCode.trim().toUpperCase();
     if (!code) return;

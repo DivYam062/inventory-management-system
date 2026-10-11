@@ -49,7 +49,6 @@ const deleteUploadedFile = (publicPath) => {
   fs.unlink(absolutePath, () => {});
 };
 
-// Product images (existing behavior, used when product routes are rebuilt).
 const upload = createImageUpload("products");
 
 module.exports = upload;

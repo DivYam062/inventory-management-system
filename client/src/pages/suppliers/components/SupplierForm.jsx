@@ -49,7 +49,6 @@ const SupplierForm = ({ supplier, loadSellerOptions, onSubmit, apiError = "" }) 
       status: values.status,
     };
 
-    // Only when creating: assign to a seller right away (optional).
     if (!isEdit && values.sellerId) payload.sellerId = values.sellerId;
 
     onSubmit(payload);

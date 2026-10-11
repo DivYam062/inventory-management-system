@@ -24,14 +24,12 @@ const RESERVED_NAMES = Object.values(ROLE_TYPE_NAMES).map((name) => name.toLower
 
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
 
-// { resource: [actions] } -> [{ resource, actions }] in registry order.
 const permissionsToArray = (permissions) =>
   PERMISSION_REGISTRY.filter((entry) => permissions[entry.resource]?.length).map((entry) => ({
     resource: entry.resource,
     actions: entry.actions.filter((action) => permissions[entry.resource].includes(action)),
   }));
 
-// "Product: view, edit" lines for a role's permissions, and what changed between two versions of them.
 const RESOURCE_LABELS = Object.fromEntries(PERMISSION_REGISTRY.map((entry) => [entry.resource, entry.label]));
 
 const permissionKeys = (permissions) =>
@@ -56,7 +54,6 @@ const serializeRole = (role, userCount, req) => {
   };
 };
 
-// Validates the request's permission list. Returns { permissions: { resource: [actions] } } or { error }.
 const parsePermissions = (input) => {
   if (!Array.isArray(input)) return { error: "Permissions must be a list" };
 
@@ -85,7 +82,6 @@ const parsePermissions = (input) => {
   return { permissions };
 };
 
-// Returns an error message for a bad role name, otherwise null.
 const nameError = async (req, name, exceptId) => {
   if (typeof name !== "string" || !name.trim()) return "Role name is required";
   if (name.trim().length > MAX_NAME_LENGTH) return `Role name must be at most ${MAX_NAME_LENGTH} characters`;
@@ -109,8 +105,6 @@ const countUsersByRole = async (roleIds) => {
   return new Map(counts.map((c) => [String(c._id), c.count]));
 };
 
-// Loads the role a request targets (inside the organization) and checks the caller may modify it.
-// Returns the role, or sends the error response and returns null.
 const loadManageableRole = async (req, res) => {
   const role = await findByIdInOrg(Role, req, req.params.id);
 
@@ -132,7 +126,6 @@ const loadManageableRole = async (req, res) => {
   return role;
 };
 
-// Every feature and its actions, for building the permission picker.
 const getPermissionCatalog = (req, res) =>
   sendSuccess(
     res,
@@ -151,7 +144,6 @@ const getRoles = async (req, res) => {
   const pageNum = Math.max(parseInt(page, 10) || 1, 1);
   const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
 
-  // An organization has few roles: Network Admin, then Support, then custom roles by name.
   const order = { [ROLE_TYPES.DEFAULT_ADMIN]: 0, [ROLE_TYPES.SUPPORT]: 1, [ROLE_TYPES.CUSTOM]: 2 };
   const all = (await Role.find(query)).sort(
     (a, b) => order[a.type] - order[b.type] || a.name.localeCompare(b.name)

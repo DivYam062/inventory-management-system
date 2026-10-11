@@ -1,7 +1,6 @@
 const Role = require("../models/Role");
 const { ROLE_TYPES, ROLE_TYPE_NAMES } = require("../config/constants");
 
-// Every organization gets the two protected roles. Called when an organization is created.
 const ensureDefaultRoles = async (organizationId, options = {}) => {
   const roles = {};
 

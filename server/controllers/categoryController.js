@@ -25,7 +25,6 @@ const serializeCategory = (category, productCount) => ({
 
 const isValidStatus = (status) => Object.values(ENTITY_STATUS).includes(status);
 
-// How many products use each of the given categories.
 const countProductsByCategory = async (categoryIds) => {
   const counts = await Product.aggregate([
     { $match: { categoryId: { $in: categoryIds } } },
@@ -34,7 +33,6 @@ const countProductsByCategory = async (categoryIds) => {
   return new Map(counts.map((c) => [String(c._id), c.count]));
 };
 
-// Returns an error message for a bad category name, otherwise null.
 const nameError = async (req, name, exceptId) => {
   if (typeof name !== "string" || !name.trim()) return "Category name is required";
   if (name.trim().length > 100) return "Category name must be at most 100 characters";

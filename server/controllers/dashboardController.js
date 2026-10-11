@@ -42,7 +42,6 @@ const roundTo = (value, places) => {
   return Math.round(value * factor) / factor;
 };
 
-// ["2026-10-05", ..., "2026-10-11"]: the last DAYS UTC days, oldest first, ending today.
 const lastDays = () => {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -56,7 +55,6 @@ const lastDays = () => {
 
 const windowStart = (days) => new Date(`${days[0]}T00:00:00.000Z`);
 
-// { status: count } for an organization's documents.
 const countByStatus = async (Model, organizationId, extraMatch = {}) => {
   const rows = await Model.aggregate([
     { $match: { organizationId: toObjectId(organizationId), ...extraMatch } },
@@ -65,8 +63,6 @@ const countByStatus = async (Model, organizationId, extraMatch = {}) => {
   return Object.fromEntries(rows.map((row) => [row._id, row.count]));
 };
 
-// Counts per day over the window, with the days that had nothing filled in as 0:
-//   [{ date: "2026-10-11", count: 3 }, ...]
 const countPerDay = async (Model, organizationId, dateField, days, extraMatch = {}) => {
   const rows = await Model.aggregate([
     { $match: { organizationId: toObjectId(organizationId), [dateField]: { $gte: windowStart(days) }, ...extraMatch } },
@@ -80,8 +76,6 @@ const sum = (counts, ...statuses) => statuses.reduce((total, status) => total + 
 const total = (counts) => Object.values(counts).reduce((all, count) => all + count, 0);
 
 const names = (refs) => (refs && refs._id ? { id: refs._id, name: refs.name } : null);
-
-// ---- sections --------------------------------------------------------------------------------------------
 
 const productsSection = async (organizationId) => {
   const counts = await countByStatus(Product, organizationId);
@@ -288,8 +282,6 @@ const usersSection = async (organizationId) => {
 };
 
 const rolesSection = async (organizationId) => ({ total: await Role.countDocuments({ organizationId }) });
-
-// ---- the endpoint ----------------------------------------------------------------------------------------
 
 const getDashboard = async (req, res) => {
   const organizationId = req.organizationId;

@@ -17,12 +17,10 @@ const CURRENCIES = [
 ];
 
 const UNITS = [
-  // Count
   { code: "PCS", name: "Piece", group: "Count" },
   { code: "PAIR", name: "Pair", group: "Count" },
   { code: "DOZEN", name: "Dozen", group: "Count" },
   { code: "SET", name: "Set", group: "Count" },
-  // Packaging
   { code: "BOX", name: "Box", group: "Packaging" },
   { code: "CARTON", name: "Carton", group: "Packaging" },
   { code: "PACK", name: "Pack", group: "Packaging" },
@@ -34,22 +32,18 @@ const UNITS = [
   { code: "ROLL", name: "Roll", group: "Packaging" },
   { code: "DRUM", name: "Drum", group: "Packaging" },
   { code: "PALLET", name: "Pallet", group: "Packaging" },
-  // Volume
   { code: "L", name: "Litre", group: "Volume" },
   { code: "ML", name: "Millilitre", group: "Volume" },
-  // Weight
   { code: "KG", name: "Kilogram", group: "Weight" },
   { code: "G", name: "Gram", group: "Weight" },
   { code: "MG", name: "Milligram", group: "Weight" },
   { code: "T", name: "Tonne", group: "Weight" },
   { code: "LB", name: "Pound", group: "Weight" },
-  // Length
   { code: "M", name: "Metre", group: "Length" },
   { code: "CM", name: "Centimetre", group: "Length" },
   { code: "MM", name: "Millimetre", group: "Length" },
   { code: "FT", name: "Foot", group: "Length" },
   { code: "IN", name: "Inch", group: "Length" },
-  // Area
   { code: "SQM", name: "Square Metre", group: "Area" },
   { code: "SQFT", name: "Square Foot", group: "Area" },
 ];

@@ -170,8 +170,6 @@ const Select = ({
     setOpen(true);
   };
 
-  // --- async loading -------------------------------------------------------------------
-
   const fetchPage = useCallback(
     async (searchValue, pageNumber) => {
       const key = JSON.stringify({ search: searchValue, scopeKey });
@@ -244,8 +242,6 @@ const Select = ({
     if (distanceFromBottom <= 60) fetchPage(search, asyncState.page + 1);
   };
 
-  // --- visible options -----------------------------------------------------------------
-
   const baseOptions = isAsync
     ? asyncState.options
     : options.filter((option) => option.label.toLowerCase().includes(search.trim().toLowerCase()));
@@ -255,8 +251,6 @@ const Select = ({
     : baseOptions;
 
   const clampedActive = Math.min(activeIndex, Math.max(visibleOptions.length - 1, 0));
-
-  // --- selection -----------------------------------------------------------------------
 
   const isOptionDisabled = (option) =>
     disabledValues.some((disabledValue) => sameValue(disabledValue, option.value)) && !isSelected(option.value);
@@ -294,8 +288,6 @@ const Select = ({
     emit(isMultiple ? [] : "");
     setSearch("");
   };
-
-  // --- keyboard ------------------------------------------------------------------------
 
   const handleKeyDown = (event) => {
     if (isDisabled) return;
@@ -340,8 +332,6 @@ const Select = ({
       default:
     }
   };
-
-  // --- open/close side effects ---------------------------------------------------------
 
   useEffect(() => {
     if (open) inputRef.current?.focus();

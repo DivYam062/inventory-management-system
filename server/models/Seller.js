@@ -56,7 +56,6 @@ const sellerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Names are unique per organization, ignoring case.
 sellerSchema.index(
   { organizationId: 1, name: 1 },
   { unique: true, collation: { locale: "en", strength: 2 } }

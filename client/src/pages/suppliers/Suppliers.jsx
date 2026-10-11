@@ -72,12 +72,10 @@ const Suppliers = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  // Activate/deactivate from the table. Deactivating asks for confirmation first.
   const [togglingId, setTogglingId] = useState(null);
   const [statusTarget, setStatusTarget] = useState(null);
   const [statusError, setStatusError] = useState("");
 
-  // Assign an unassigned supplier to a seller / unassign one from theirs.
   const [assignTarget, setAssignTarget] = useState(null);
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState("");
@@ -85,8 +83,6 @@ const Suppliers = () => {
   const [unassigning, setUnassigning] = useState(false);
   const [unassignError, setUnassignError] = useState("");
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 

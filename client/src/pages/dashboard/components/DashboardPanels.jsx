@@ -18,7 +18,6 @@ const ViewAll = ({ to, label = "View All" }) => (
   </Link>
 );
 
-// Day buckets -> ColumnChart data ("Mon", with the full date in the tooltip).
 const toColumns = (perDay) =>
   perDay.map((day) => ({
     key: day.date,
@@ -29,7 +28,6 @@ const toColumns = (perDay) =>
 
 const hasAny = (perDay) => perDay.some((day) => day.count > 0);
 
-// A short list of recent records: left = what it is, right = a status or a figure.
 const RecentList = ({ items, emptyTitle }) =>
   items.length === 0 ? (
     <p className="py-4 text-center text-sm text-gray-500">{emptyTitle}</p>
@@ -52,9 +50,6 @@ const SubTitle = ({ children }) => <p className="mb-2 mt-5 text-xs font-semibold
 const statusItems = (byStatus, labels) =>
   labels.map(([key, label]) => ({ key, label, value: byStatus[key] ?? 0 }));
 
-// ---------------------------------------------------------------------------------------------------------------
-
-// What has to be done (from Stock Tracking).
 export const NeedsActionPanel = ({ tracking, paths }) => (
   <Card title="Needs your action" description="Open items that are waiting for someone to act" actions={<ViewAll to={paths.tracking} />}>
     {tracking.needsActionList.length === 0 ? (
@@ -73,7 +68,6 @@ export const NeedsActionPanel = ({ tracking, paths }) => (
   </Card>
 );
 
-// Where everything is in the flow.
 export const FlowPanel = ({ tracking, paths }) => (
   <Card title="Flow overview" description="Purchase orders and deliveries by stage" actions={<ViewAll to={paths.tracking} />}>
     {tracking.total === 0 ? (

@@ -39,7 +39,6 @@ const STAGE_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-// The cards double as quick filters: clicking one shows only the trackers at that stage.
 const CARDS = [
   { stage: "awaiting_delivery", label: "Awaiting delivery", icon: Hourglass, accent: "gray" },
   { stage: "at_gate", label: "At the gate", icon: DoorOpen, accent: "yellow" },
@@ -50,7 +49,6 @@ const CARDS = [
 
 const ROUTE_TYPES = { purchase_order: "purchase-orders", gate_entry: "gate-entries", grn: "grns" };
 
-// The seller dropdown loads from the API only when opened, 40 at a time.
 const loadSellers = createOptionsLoader(getSellers, (seller) => ({ value: seller.id, label: seller.name }));
 
 const Tracking = () => {
@@ -72,13 +70,10 @@ const Tracking = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Opening a tracker loads it in full (stages, actions, items) first.
   const [busyKey, setBusyKey] = useState(null);
   const [pageError, setPageError] = useState("");
   const [viewTarget, setViewTarget] = useState(null);
 
-  // Debounce the raw search input before it drives the API call. Nothing happens unless the text really
-  // changed, so opening the page (or paging) is never reset to page 1 by a stray timer.
   useEffect(() => {
     if (searchInput === search) return;
 
