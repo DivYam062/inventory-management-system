@@ -29,6 +29,7 @@ const ProductDetails = ({ product }) => (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Field label="Product Name">{product.name}</Field>
       <Field label="SKU">{product.sku}</Field>
+      <Field label="Barcode">{product.barcode}</Field>
       <Field label="Category">
         {product.category && (
           <span className="inline-flex items-center gap-2">

@@ -12,6 +12,7 @@ import Products from "../pages/products/Products";
 import Configuration from "../pages/settings/Configuration";
 import PurchaseOrders from "../pages/purchase-orders/PurchaseOrders";
 import GateEntries from "../pages/gate-entries/GateEntries";
+import Grns from "../pages/grns/Grns";
 import Sellers from "../pages/sellers/Sellers";
 import Suppliers from "../pages/suppliers/Suppliers";
 import ModulePlaceholder from "../pages/shared/ModulePlaceholder";
@@ -35,6 +36,7 @@ const ORGANIZATION_PAGES = {
   "/catalog/products": Products,
   "/inventory/operations/purchase-orders": PurchaseOrders,
   "/inventory/operations/gate-entries": GateEntries,
+  "/inventory/operations/grns": Grns,
   "/seller/sellers": Sellers,
   "/seller/suppliers": Suppliers,
   "/settings/configuration": Configuration,

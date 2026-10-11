@@ -27,7 +27,10 @@ const ProductTable = ({ products, loading, canEdit, togglingId, onView, onToggle
           <ProductThumbnail product={product} />
           <div className="min-w-0">
             <p className="truncate font-medium text-gray-900">{product.name}</p>
-            <p className="truncate text-xs text-gray-500">{product.sku}</p>
+            <p className="truncate text-xs text-gray-500">
+              {product.sku}
+              {product.barcode ? ` · ${product.barcode}` : ""}
+            </p>
           </div>
         </div>
       ),

@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Seller = require("../models/Seller");
 const PurchaseOrder = require("../models/PurchaseOrder");
+const Grn = require("../models/Grn");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -23,6 +24,7 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
 
 const IMAGE_PUBLIC_PATH = "/uploads/products/";
+const BARCODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 const SKU_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 const MAX_PRICE = 1_000_000_000;
 
@@ -39,6 +41,7 @@ const serializeProduct = (product) => {
     id: product._id,
     name: product.name,
     sku: product.sku,
+    barcode: product.barcode,
     description: product.description,
     price: product.price,
     currency: product.currency,
@@ -58,6 +61,19 @@ const nameError = (name) => {
   if (typeof name !== "string" || !name.trim()) return "Product name is required";
   if (name.trim().length > 150) return "Product name must be at most 150 characters";
   return null;
+};
+
+// Barcode is optional: undefined / "" / null mean "none". Returns { value } (uppercase, or undefined) or { error }.
+const parseBarcode = (barcode) => {
+  if (barcode === undefined || barcode === null || barcode === "") return { value: undefined };
+  if (typeof barcode !== "string") return { error: "Barcode is invalid" };
+
+  const value = barcode.trim();
+  if (!value) return { value: undefined };
+  if (value.length > 50) return { error: "Barcode must be at most 50 characters" };
+  if (!BARCODE_PATTERN.test(value)) return { error: "Barcode can only contain letters, numbers and . _ / -" };
+
+  return { value: value.toUpperCase() };
 };
 
 const skuError = (sku) => {
@@ -102,6 +118,9 @@ const enabledError = async (req, currency, unit) => {
   return null;
 };
 
+const barcodeTaken = (req, barcode, exceptId) =>
+  Product.exists(orgFilter(req, { barcode, ...(exceptId && { _id: { $ne: exceptId } }) }));
+
 const skuTaken = (req, sku, exceptId) =>
   Product.exists(
     orgFilter(req, {
@@ -128,7 +147,7 @@ const saveProduct = async (res, product) => {
     return true;
   } catch (error) {
     if (error.code === 11000) {
-      fail(res, 400, "A product with this SKU already exists");
+      fail(res, 400, error.keyPattern && error.keyPattern.barcode ? "A product with this barcode already exists" : "A product with this SKU already exists");
       return false;
     }
     throw error;
@@ -149,6 +168,9 @@ const createProduct = async (req, res) => {
 
   const problem = nameError(name) || skuError(sku);
   if (problem) return reject(400, problem);
+
+  const parsedBarcode = parseBarcode(req.body.barcode);
+  if (parsedBarcode.error) return reject(400, parsedBarcode.error);
 
   const parsedPrice = parsePrice(price);
   if (parsedPrice.error) return reject(400, parsedPrice.error);
@@ -176,6 +198,9 @@ const createProduct = async (req, res) => {
   if (notEnabled) return reject(400, notEnabled);
 
   if (await skuTaken(req, sku)) return reject(400, "A product with this SKU already exists");
+  if (parsedBarcode.value && (await barcodeTaken(req, parsedBarcode.value))) {
+    return reject(400, "A product with this barcode already exists");
+  }
 
   const category = await findActiveReference(Category, "Category", req, categoryId);
   if (category.error) return reject(400, category.error);
@@ -188,6 +213,7 @@ const createProduct = async (req, res) => {
     organizationId: req.organizationId,
     name,
     sku,
+    barcode: parsedBarcode.value,
     description: description || undefined,
     categoryId: category.doc._id,
     sellerId: seller.doc._id,
@@ -217,13 +243,19 @@ const createProduct = async (req, res) => {
 };
 
 const getProducts = async (req, res) => {
-  const { search, status, categoryId, sellerId, page, limit } = req.query;
+  const { search, status, categoryId, sellerId, barcode, page, limit } = req.query;
 
   const query = orgFilter(req);
 
+  // Name, SKU or barcode contains the text.
   if (typeof search === "string" && search.trim()) {
     const pattern = { $regex: escapeRegex(search.trim()), $options: "i" };
-    query.$or = [{ name: pattern }, { sku: pattern }];
+    query.$or = [{ name: pattern }, { sku: pattern }, { barcode: pattern }];
+  }
+
+  // Exact barcode (what a scan looks up).
+  if (typeof barcode === "string" && barcode.trim()) {
+    query.barcode = barcode.trim().toUpperCase();
   }
 
   if (isValidStatus(status)) {
@@ -287,6 +319,15 @@ const updateProduct = async (req, res) => {
     if (await skuTaken(req, sku, product._id)) return reject(400, "A product with this SKU already exists");
   }
 
+  let parsedBarcode;
+  if (req.body.barcode !== undefined) {
+    parsedBarcode = parseBarcode(req.body.barcode);
+    if (parsedBarcode.error) return reject(400, parsedBarcode.error);
+    if (parsedBarcode.value && (await barcodeTaken(req, parsedBarcode.value, product._id))) {
+      return reject(400, "A product with this barcode already exists");
+    }
+  }
+
   let parsedPrice;
   if (price !== undefined) {
     parsedPrice = parsePrice(price);
@@ -343,13 +384,17 @@ const updateProduct = async (req, res) => {
 
     // A purchase order's products must all be made under the order's seller, so a product on an order
     // cannot move to another seller.
-    if (await PurchaseOrder.exists({ "items.productId": product._id })) {
-      return reject(400, "This product is on a purchase order, so its seller cannot be changed");
+    if (
+      (await PurchaseOrder.exists({ "items.productId": product._id })) ||
+      (await Grn.exists({ "items.productId": product._id }))
+    ) {
+      return reject(400, "This product is on a purchase order or GRN, so its seller cannot be changed");
     }
   }
 
   if (name !== undefined) product.name = name;
   if (sku !== undefined) product.sku = sku;
+  if (parsedBarcode) product.barcode = parsedBarcode.value;
   if (description !== undefined) product.description = description || undefined;
   if (parsedPrice) product.price = parsedPrice.value;
   if (unit !== undefined) product.unit = unit;
@@ -396,7 +441,12 @@ const deleteProduct = async (req, res) => {
   const product = await findByIdInOrg(Product, req, req.params.id);
   if (!product) return fail(res, 404, "Product not found");
 
-  // GRNs and inventory that reference this product will need to be checked here when those modules are built.
+  // Inventory will need to be checked here when that module is built.
+  const grnCount = await Grn.countDocuments({ "items.productId": product._id });
+  if (grnCount > 0) {
+    return fail(res, 400, `Cannot delete this product. It was received on ${grnCount} GRN${grnCount === 1 ? "" : "s"}.`);
+  }
+
   const orderCount = await PurchaseOrder.countDocuments({ "items.productId": product._id });
   if (orderCount > 0) {
     return fail(

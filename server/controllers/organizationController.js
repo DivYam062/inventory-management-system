@@ -8,6 +8,7 @@ const Product = require("../models/Product");
 const Configuration = require("../models/Configuration");
 const PurchaseOrder = require("../models/PurchaseOrder");
 const GateEntry = require("../models/GateEntry");
+const Grn = require("../models/Grn");
 const Counter = require("../models/Counter");
 const { ENTITY_STATUS, ROLE_TYPES } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
@@ -279,6 +280,7 @@ const deleteOrganizationData = async (organization) => {
   await Seller.deleteMany({ organizationId: organization._id });
   await Supplier.deleteMany({ organizationId: organization._id });
   await Configuration.deleteMany({ organizationId: organization._id });
+  await Grn.deleteMany({ organizationId: organization._id });
   await GateEntry.deleteMany({ organizationId: organization._id });
   await PurchaseOrder.deleteMany({ organizationId: organization._id });
   await Counter.deleteMany({ organizationId: organization._id });

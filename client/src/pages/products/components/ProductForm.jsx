@@ -23,6 +23,7 @@ const ProductForm = ({
   const [values, setValues] = useState(() => ({
     name: product?.name ?? "",
     sku: product?.sku ?? "",
+    barcode: product?.barcode ?? "",
     categoryId: product?.category?.id ?? "",
     sellerId: product?.seller?.id ?? "",
     price: product?.price !== undefined && product?.price !== null ? String(product.price) : "",
@@ -56,6 +57,9 @@ const ProductForm = ({
     else if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(values.sku.trim())) {
       nextErrors.sku = "SKU can only contain letters, numbers and . _ / -";
     }
+    if (values.barcode.trim() && !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(values.barcode.trim())) {
+      nextErrors.barcode = "Barcode can only contain letters, numbers and . _ / -";
+    }
     if (!values.categoryId) nextErrors.categoryId = "Select a category";
     if (!values.sellerId) nextErrors.sellerId = "Select a seller";
     if (!values.unit) nextErrors.unit = "Select a unit of measurement";
@@ -67,6 +71,7 @@ const ProductForm = ({
     const payload = {
       name: values.name.trim(),
       sku: values.sku.trim(),
+      barcode: values.barcode.trim(),
       categoryId: values.categoryId,
       sellerId: values.sellerId,
       price: values.price.trim(),
@@ -120,6 +125,17 @@ const ProductForm = ({
           placeholder="e.g. HAM-001"
         />
       </div>
+
+      <Input
+        label="Barcode"
+        name="barcode"
+        value={values.barcode}
+        onChange={handleChange}
+        error={errors.barcode}
+        maxLength={50}
+        placeholder="Optional. Scan the item's barcode here"
+        helperText="Used to find this product when its barcode is scanned (e.g. when receiving goods). Unique per organization."
+      />
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Select

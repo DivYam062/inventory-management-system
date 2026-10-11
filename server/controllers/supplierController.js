@@ -4,6 +4,7 @@ const Supplier = require("../models/Supplier");
 const Seller = require("../models/Seller");
 const PurchaseOrder = require("../models/PurchaseOrder");
 const GateEntry = require("../models/GateEntry");
+const Grn = require("../models/Grn");
 const { PURCHASE_ORDER_STATUS } = PurchaseOrder;
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
@@ -285,6 +286,15 @@ const unassignSupplier = async (req, res) => {
     );
   }
 
+  const pendingGrns = await Grn.countDocuments({ supplierId: supplier._id, status: "pending_inspection" });
+  if (pendingGrns > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot unassign ${supplier.name}: ${pendingGrns} GRN${pendingGrns === 1 ? " is" : "s are"} waiting for inspection.`
+    );
+  }
+
   supplier.sellerId = null;
   await supplier.save();
 
@@ -301,6 +311,15 @@ const deleteSupplier = async (req, res) => {
       res,
       400,
       `Cannot delete this supplier. ${entryCount} gate entr${entryCount === 1 ? "y was" : "ies were"} recorded for them.`
+    );
+  }
+
+  const grnCount = await Grn.countDocuments({ supplierId: supplier._id });
+  if (grnCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this supplier. ${grnCount} GRN${grnCount === 1 ? " was" : "s were"} received from them.`
     );
   }
 

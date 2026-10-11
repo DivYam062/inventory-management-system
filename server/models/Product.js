@@ -29,6 +29,14 @@ const productSchema = new mongoose.Schema(
       maxlength: [50, "SKU must be at most 50 characters"],
     },
 
+    // The code printed on the item, read by a barcode scanner. Optional; unique per organization when set.
+    barcode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      maxlength: [50, "Barcode must be at most 50 characters"],
+    },
+
     description: {
       type: String,
       trim: true,
@@ -87,5 +95,11 @@ const productSchema = new mongoose.Schema(
 );
 
 productSchema.index({ organizationId: 1, sku: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
+
+// A barcode identifies one product within the organization. Products without one are not indexed.
+productSchema.index(
+  { organizationId: 1, barcode: 1 },
+  { unique: true, partialFilterExpression: { barcode: { $type: "string" } } }
+);
 
 module.exports = mongoose.model("Product", productSchema);
