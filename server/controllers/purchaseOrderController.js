@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const PurchaseOrder = require("../models/PurchaseOrder");
 const Counter = require("../models/Counter");
+const GateEntry = require("../models/GateEntry");
 const Seller = require("../models/Seller");
 const Supplier = require("../models/Supplier");
 const Product = require("../models/Product");
@@ -291,7 +292,12 @@ const getPurchaseOrders = async (req, res) => {
     query.poNumber = { $regex: escapeRegex(search.trim()), $options: "i" };
   }
 
-  if (isValidStatus(status)) query.status = status;
+  // One status, or several separated by commas (e.g. "issued,partially_received").
+  if (typeof status === "string") {
+    const statuses = status.split(",").filter(isValidStatus);
+    if (statuses.length === 1) query.status = statuses[0];
+    else if (statuses.length > 1) query.status = { $in: statuses };
+  }
   if (typeof sellerId === "string" && mongoose.isValidObjectId(sellerId)) query.sellerId = sellerId;
   if (typeof supplierId === "string" && mongoose.isValidObjectId(supplierId)) query.supplierId = supplierId;
 
@@ -446,6 +452,15 @@ const cancelPurchaseOrder = async (req, res) => {
 
   if (order.items.some((item) => item.receivedQuantity > 0)) {
     return fail(res, 400, "Goods have already been received against this purchase order");
+  }
+
+  const waiting = await GateEntry.countDocuments({ purchaseOrderId: order._id, status: "pending" });
+  if (waiting > 0) {
+    return fail(
+      res,
+      400,
+      `${waiting} gate entr${waiting === 1 ? "y is" : "ies are"} waiting against this purchase order. Cancel ${waiting === 1 ? "it" : "them"} first.`
+    );
   }
 
   order.status = PURCHASE_ORDER_STATUS.CANCELLED;

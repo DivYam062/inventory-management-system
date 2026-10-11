@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Supplier = require("../models/Supplier");
 const Seller = require("../models/Seller");
 const PurchaseOrder = require("../models/PurchaseOrder");
+const GateEntry = require("../models/GateEntry");
 const { PURCHASE_ORDER_STATUS } = PurchaseOrder;
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
@@ -261,8 +262,8 @@ const unassignSupplier = async (req, res) => {
     return fail(res, 400, `${supplier.name} is not assigned to a seller`);
   }
 
-  // A supplier with an open purchase order (draft, issued or partly received) stays with its seller.
-  // Gate entries will need to be checked here when that module is built.
+  // A supplier with an open purchase order (draft, issued or partly received) or a pending gate entry stays
+  // with its seller.
   const openOrders = await PurchaseOrder.countDocuments({
     supplierId: supplier._id,
     status: { $in: [PURCHASE_ORDER_STATUS.DRAFT, PURCHASE_ORDER_STATUS.ISSUED, PURCHASE_ORDER_STATUS.PARTIALLY_RECEIVED] },
@@ -272,6 +273,15 @@ const unassignSupplier = async (req, res) => {
       res,
       400,
       `Cannot unassign ${supplier.name}: ${openOrders} open purchase order${openOrders === 1 ? "" : "s"} use this supplier.`
+    );
+  }
+
+  const pendingEntries = await GateEntry.countDocuments({ supplierId: supplier._id, status: "pending" });
+  if (pendingEntries > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot unassign ${supplier.name}: ${pendingEntries} pending gate entr${pendingEntries === 1 ? "y uses" : "ies use"} this supplier.`
     );
   }
 
@@ -285,7 +295,15 @@ const deleteSupplier = async (req, res) => {
   const supplier = await findByIdInOrg(Supplier, req, req.params.id);
   if (!supplier) return fail(res, 404, "Supplier not found");
 
-  // Gate entries will need to be checked here when that module is built.
+  const entryCount = await GateEntry.countDocuments({ supplierId: supplier._id });
+  if (entryCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this supplier. ${entryCount} gate entr${entryCount === 1 ? "y was" : "ies were"} recorded for them.`
+    );
+  }
+
   const orderCount = await PurchaseOrder.countDocuments({ supplierId: supplier._id });
   if (orderCount > 0) {
     return fail(

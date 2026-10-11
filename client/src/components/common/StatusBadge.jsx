@@ -13,6 +13,7 @@ const STATUS_CONFIG = {
   "partially-received": { label: "Partially Received", variant: "yellow" },
   received: { label: "Received", variant: "green" },
   cancelled: { label: "Cancelled", variant: "red" },
+  completed: { label: "Completed", variant: "green" },
   pending: { label: "Pending", variant: "yellow" },
   success: { label: "Success", variant: "green" },
   error: { label: "Error", variant: "red" },

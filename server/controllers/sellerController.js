@@ -2,6 +2,7 @@ const Seller = require("../models/Seller");
 const Supplier = require("../models/Supplier");
 const Product = require("../models/Product");
 const PurchaseOrder = require("../models/PurchaseOrder");
+const GateEntry = require("../models/GateEntry");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -208,8 +209,8 @@ const updateSeller = async (req, res) => {
   return sendSuccess(res, serializeSeller(seller, relations.get(String(seller._id))));
 };
 
-// A seller that other records depend on must not be deleted. Suppliers, products and purchase orders are checked
-// here; gate entries add their own check when that module is built.
+// A seller that other records depend on must not be deleted. Suppliers, products, purchase orders and gate entries
+// are checked here; GRNs add their own check when that module is built.
 const deleteSeller = async (req, res) => {
   const seller = await findByIdInOrg(Seller, req, req.params.id);
   if (!seller) return fail(res, 404, "Seller not found");
@@ -238,6 +239,15 @@ const deleteSeller = async (req, res) => {
       res,
       400,
       `Cannot delete this seller. ${orderCount} purchase order${orderCount === 1 ? " was" : "s were"} raised to it.`
+    );
+  }
+
+  const entryCount = await GateEntry.countDocuments({ sellerId: seller._id });
+  if (entryCount > 0) {
+    return fail(
+      res,
+      400,
+      `Cannot delete this seller. ${entryCount} gate entr${entryCount === 1 ? "y was" : "ies were"} recorded for it.`
     );
   }
 

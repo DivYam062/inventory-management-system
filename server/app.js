@@ -14,6 +14,7 @@ const productRoutes = require("./routes/productRoutes");
 const referenceRoutes = require("./routes/referenceRoutes");
 const configurationRoutes = require("./routes/configurationRoutes");
 const purchaseOrderRoutes = require("./routes/purchaseOrderRoutes");
+const gateEntryRoutes = require("./routes/gateEntryRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -62,6 +63,9 @@ app.use("/api/products", productRoutes);
 
 // Purchase orders (closed while the module is switched off in Configuration)
 app.use("/api/purchase-orders", purchaseOrderRoutes);
+
+// Gate entries (closed while the module is switched off in Configuration)
+app.use("/api/gate-entries", gateEntryRoutes);
 
 // Organization configuration (enabled currencies and units)
 app.use("/api/configuration", configurationRoutes);
