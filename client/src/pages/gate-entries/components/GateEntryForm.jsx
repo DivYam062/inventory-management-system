@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
+import TabToggle from "../../../components/ui/TabToggle";
 import { RESTRICTIONS } from "../../../utils/inputRestrictions";
 import { DROPDOWN_PAGE_SIZE } from "../../../utils/dropdownLoaders";
 import { nowInputDateTime, toInputDateTime } from "../../../utils/formatDate";
@@ -11,8 +12,8 @@ export const GATE_ENTRY_FORM_ID = "gate-entry-form";
 const VEHICLE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 -]*$/;
 
 const SOURCES = [
-  { value: "purchase_order", label: "Against a purchase order" },
-  { value: "direct", label: "Directly from a seller" },
+  { value: "purchase_order", label: "Purchase Order" },
+  { value: "direct", label: "Seller & Supplier" },
 ];
 
 const orderOption = (order) => ({ value: order.id, label: `${order.poNumber} - ${order.seller?.name ?? ""}` });
@@ -205,31 +206,13 @@ const GateEntryForm = ({
       ) : (
         <>
           {canUsePurchaseOrder && (
-            <fieldset>
-              <legend className="mb-1 block text-sm font-medium text-gray-700">Goods arrive</legend>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {SOURCES.map((option) => (
-                  <label
-                    key={option.value}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${
-                      values.source === option.value
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="source"
-                      value={option.value}
-                      checked={values.source === option.value}
-                      onChange={() => handleSourceChange(option.value)}
-                      className="h-4 w-4"
-                    />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <TabToggle
+              label="Goods arrive against"
+              name="source"
+              options={SOURCES}
+              value={values.source}
+              onChange={(event) => handleSourceChange(event.target.value)}
+            />
           )}
 
           {values.source === "purchase_order" ? (

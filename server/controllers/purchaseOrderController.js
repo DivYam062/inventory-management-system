@@ -11,6 +11,7 @@ const { ENTITY_STATUS } = require("../config/constants");
 const { getConfiguration } = require("../services/configurationService");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Purchase orders of the caller's organization. Every query is scoped by req.organizationId (taken from
 // the token, never from the request). Permissions: purchase-order:view to read, :create to add,
@@ -280,6 +281,16 @@ const createPurchaseOrder = async (req, res) => {
   });
 
   const saved = await loadOrder(req, order._id, { withItems: true });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    entity: { id: order._id, number: order.poNumber },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: order.status,
+    summary: `Created ${order.poNumber} for ${saved.sellerId?.name ?? "the seller"} (${order.items.length} item${order.items.length === 1 ? "" : "s"}, total ${order.currency} ${order.totalAmount})`,
+    meta: { itemCount: order.items.length, totalAmount: order.totalAmount, currency: order.currency },
+  });
+
   return sendSuccess(res, serializeOrder(saved, { withItems: true }), { status: 201 });
 };
 
@@ -392,6 +403,8 @@ const updatePurchaseOrder = async (req, res) => {
   });
   if (refs.error) return fail(res, 400, refs.error);
 
+  const before = { totalAmount: order.totalAmount, itemCount: order.items.length };
+
   order.sellerId = refs.seller._id;
   order.supplierId = refs.supplier._id;
   order.orderDate = dates.orderDate;
@@ -410,6 +423,17 @@ const updatePurchaseOrder = async (req, res) => {
   await order.save();
 
   const saved = await loadOrder(req, order._id, { withItems: true });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    entity: { id: order._id, number: order.poNumber },
+    action: AUDIT_ACTIONS.UPDATED,
+    previousStatus: order.status,
+    newStatus: order.status,
+    summary: `Edited ${order.poNumber} (total ${order.currency} ${before.totalAmount} → ${order.totalAmount})`,
+    meta: { previous: before, current: { totalAmount: order.totalAmount, itemCount: order.items.length } },
+  });
+
   return sendSuccess(res, serializeOrder(saved, { withItems: true }));
 };
 
@@ -437,6 +461,15 @@ const issuePurchaseOrder = async (req, res) => {
   order.issuedAt = new Date();
   await order.save();
 
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    entity: { id: order._id, number: order.poNumber },
+    action: AUDIT_ACTIONS.ISSUED,
+    previousStatus: PURCHASE_ORDER_STATUS.DRAFT,
+    newStatus: PURCHASE_ORDER_STATUS.ISSUED,
+    summary: `Issued ${order.poNumber} to the seller`,
+  });
+
   const saved = await loadOrder(req, order._id, { withItems: true });
   return sendSuccess(res, serializeOrder(saved, { withItems: true }));
 };
@@ -463,9 +496,19 @@ const cancelPurchaseOrder = async (req, res) => {
     );
   }
 
+  const previousStatus = order.status;
   order.status = PURCHASE_ORDER_STATUS.CANCELLED;
   order.cancelledAt = new Date();
   await order.save();
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    entity: { id: order._id, number: order.poNumber },
+    action: AUDIT_ACTIONS.CANCELLED,
+    previousStatus,
+    newStatus: PURCHASE_ORDER_STATUS.CANCELLED,
+    summary: `Cancelled ${order.poNumber}`,
+  });
 
   const saved = await loadOrder(req, order._id, { withItems: true });
   return sendSuccess(res, serializeOrder(saved, { withItems: true }));
@@ -481,6 +524,14 @@ const deletePurchaseOrder = async (req, res) => {
   }
 
   await PurchaseOrder.deleteOne({ _id: order._id });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    entity: { id: order._id, number: order.poNumber },
+    action: AUDIT_ACTIONS.DELETED,
+    previousStatus: PURCHASE_ORDER_STATUS.DRAFT,
+    summary: `Deleted draft ${order.poNumber}`,
+  });
 
   return sendSuccess(res, { id: order._id });
 };

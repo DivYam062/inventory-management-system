@@ -22,6 +22,8 @@ const PERMISSION_REGISTRY = [
   { resource: "putaway", label: "Putaway", group: "Inventory", actions: [VIEW, CREATE] },
   // Edit increases or decreases stock by hand. Stock rows themselves are created by Putaway.
   { resource: "inventory", label: "Inventory", group: "Inventory", actions: [VIEW, EDIT] },
+  // Read-only overview of where purchase orders and deliveries are in the flow and what to do next.
+  { resource: "tracking", label: "Stock Tracking", group: "Inventory", actions: [VIEW] },
   { resource: "audit-log", label: "Audit Log", group: "Logs", actions: [VIEW] },
   { resource: "configuration", label: "Configuration", group: "Settings", actions: [VIEW, EDIT] },
   { resource: "role", label: "Role", group: "Settings", actions: [VIEW, CREATE, EDIT] },

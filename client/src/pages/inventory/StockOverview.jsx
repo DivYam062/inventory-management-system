@@ -32,7 +32,7 @@ const STOCK_OPTIONS = [
 const loadCategories = createOptionsLoader(getCategories, (category) => ({ value: category.id, label: category.name }));
 const loadSellers = createOptionsLoader(getSellers, (seller) => ({ value: seller.id, label: seller.name }));
 
-const TotalInventory = () => {
+const StockOverview = () => {
   const { can } = usePermissions();
   const canEdit = can("inventory", "edit"); // increases / decreases stock
   const canFilterCategory = can("category", "view");
@@ -157,7 +157,7 @@ const TotalInventory = () => {
   return (
     <div>
       <PageHeader
-        title="Total Inventory"
+        title="Stock Overview"
         description="The stock of every product that has been put away. Increase or decrease it by hand with a reason; every change is kept in the history."
       />
 
@@ -298,4 +298,4 @@ const TotalInventory = () => {
   );
 };
 
-export default TotalInventory;
+export default StockOverview;

@@ -16,6 +16,7 @@ const { getConfiguration } = require("../services/configurationService");
 const { recalculateStatus, addReceived } = require("../services/purchaseOrderService");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, logStatusChange, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // GRNs (goods received notes) of the caller's organization. Every query is scoped by req.organizationId
 // (taken from the token, never from the request). Permissions: grn:view to read, grn:create to receive goods,
@@ -45,6 +46,28 @@ const roundTo = (value, places) => {
 };
 
 const isValidStatus = (status) => Object.values(GRN_STATUS).includes(status);
+
+const sumOf = (items, field) => roundTo(items.reduce((total, item) => total + item[field], 0), 3);
+
+// The purchase order moved to another status because of a GRN (partially received, received, back to issued...).
+const logOrderStatus = (req, order, previousStatus, cause) =>
+  logStatusChange(req, {
+    entityType: AUDIT_ENTITY_TYPES.PURCHASE_ORDER,
+    entity: { id: order._id, number: order.poNumber },
+    previousStatus,
+    newStatus: order.status,
+    summary: `${order.poNumber} is now ${order.status.replace("_", " ")} (${cause})`,
+  });
+
+// The gate entry changed status because of a GRN made from it / cancelled.
+const logEntryStatus = (req, entry, previousStatus, newStatus, cause) =>
+  logStatusChange(req, {
+    entityType: AUDIT_ENTITY_TYPES.GATE_ENTRY,
+    entity: { id: entry._id, number: entry.gateEntryNumber },
+    previousStatus,
+    newStatus,
+    summary: `${entry.gateEntryNumber} is now ${newStatus} (${cause})`,
+  });
 
 const summarize = (ref) => (ref && ref._id ? { id: ref._id, name: ref.name, status: ref.status } : null);
 
@@ -376,13 +399,33 @@ const createGrn = async (req, res) => {
       createdBy: req.user._id,
     });
 
+    let orderChange = null;
     if (order) {
       const fresh = await PurchaseOrder.findById(order._id);
+      const previousStatus = fresh.status;
       recalculateStatus(fresh);
       await fresh.save();
+      orderChange = { order: fresh, previousStatus };
     }
 
     const saved = await loadGrn(req, grn._id, { detailed: true });
+
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.GRN,
+      entity: { id: grn._id, number: grn.grnNumber },
+      action: AUDIT_ACTIONS.CREATED,
+      newStatus: grn.status,
+      summary: `Received ${grn.items.length} item${grn.items.length === 1 ? "" : "s"} (${sumOf(grn.items, "receivedQty")} in total) from ${seller.name} on ${grn.grnNumber}`,
+      meta: {
+        source: req.body.source,
+        gateEntry: entry ? entry.gateEntryNumber : null,
+        purchaseOrder: order ? order.poNumber : null,
+        receivedQty: sumOf(grn.items, "receivedQty"),
+      },
+    });
+    if (entry) await logEntryStatus(req, entry, GATE_ENTRY_STATUS.PENDING, GATE_ENTRY_STATUS.COMPLETED, `received on ${grn.grnNumber}`);
+    if (orderChange) await logOrderStatus(req, orderChange.order, orderChange.previousStatus, `goods received on ${grn.grnNumber}`);
+
     return sendSuccess(res, serializeGrn(saved, { detailed: true }), { status: 201 });
   } catch (error) {
     await rollback();
@@ -534,6 +577,8 @@ const inspectGrn = async (req, res) => {
   grn.inspectedBy = req.user._id;
   await grn.save();
 
+  let orderChange = null;
+
   if (grn.purchaseOrderId) {
     for (const { line, failed } of results) {
       if (failed > 0) await addReceived(grn.purchaseOrderId, line.productId, -failed);
@@ -541,10 +586,23 @@ const inspectGrn = async (req, res) => {
 
     const order = await PurchaseOrder.findById(grn.purchaseOrderId);
     if (order) {
+      const previousStatus = order.status;
       recalculateStatus(order);
       await order.save();
+      orderChange = { order, previousStatus };
     }
   }
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.GRN,
+    entity: { id: grn._id, number: grn.grnNumber },
+    action: AUDIT_ACTIONS.INSPECTED,
+    previousStatus: GRN_STATUS.PENDING_INSPECTION,
+    newStatus: GRN_STATUS.INSPECTED,
+    summary: `Inspected ${grn.grnNumber}: ${sumOf(grn.items, "passedQty")} passed, ${sumOf(grn.items, "failedQty")} failed`,
+    meta: { receivedQty: sumOf(grn.items, "receivedQty"), passedQty: sumOf(grn.items, "passedQty"), failedQty: sumOf(grn.items, "failedQty") },
+  });
+  if (orderChange) await logOrderStatus(req, orderChange.order, orderChange.previousStatus, `inspection of ${grn.grnNumber}`);
 
   const saved = await loadGrn(req, grn._id, { detailed: true });
   return sendSuccess(res, serializeGrn(saved, { detailed: true }));
@@ -566,22 +624,40 @@ const cancelGrn = async (req, res) => {
   grn.cancelledAt = new Date();
   await grn.save();
 
+  let orderChange = null;
+
   if (grn.purchaseOrderId) {
     for (const line of grn.items) await addReceived(grn.purchaseOrderId, line.productId, -line.receivedQty);
 
     const order = await PurchaseOrder.findById(grn.purchaseOrderId);
     if (order) {
+      const previousStatus = order.status;
       recalculateStatus(order);
       await order.save();
+      orderChange = { order, previousStatus };
     }
   }
 
+  let reopenedEntry = null;
+
   if (grn.gateEntryId) {
-    await GateEntry.updateOne(
+    reopenedEntry = await GateEntry.findOneAndUpdate(
       { _id: grn.gateEntryId, organizationId: req.organizationId, status: GATE_ENTRY_STATUS.COMPLETED },
-      { status: GATE_ENTRY_STATUS.PENDING }
+      { status: GATE_ENTRY_STATUS.PENDING },
+      { returnDocument: "after" }
     );
   }
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.GRN,
+    entity: { id: grn._id, number: grn.grnNumber },
+    action: AUDIT_ACTIONS.CANCELLED,
+    previousStatus: GRN_STATUS.PENDING_INSPECTION,
+    newStatus: GRN_STATUS.CANCELLED,
+    summary: `Cancelled ${grn.grnNumber} (${sumOf(grn.items, "receivedQty")} received had been recorded)`,
+  });
+  if (reopenedEntry) await logEntryStatus(req, reopenedEntry, GATE_ENTRY_STATUS.COMPLETED, GATE_ENTRY_STATUS.PENDING, `${grn.grnNumber} was cancelled`);
+  if (orderChange) await logOrderStatus(req, orderChange.order, orderChange.previousStatus, `${grn.grnNumber} was cancelled`);
 
   const saved = await loadGrn(req, grn._id, { detailed: true });
   return sendSuccess(res, serializeGrn(saved, { detailed: true }));

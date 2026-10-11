@@ -18,6 +18,8 @@ const gateEntryRoutes = require("./routes/gateEntryRoutes");
 const grnRoutes = require("./routes/grnRoutes");
 const putawayRoutes = require("./routes/putawayRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
+const trackingRoutes = require("./routes/trackingRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -78,6 +80,12 @@ app.use("/api/putaways", putawayRoutes);
 
 // Total inventory: stock per product, manual increase / decrease, history
 app.use("/api/inventory", inventoryRoutes);
+
+// Tracking: where each purchase order / delivery is in the flow and what to do next
+app.use("/api/tracking", trackingRoutes);
+
+// Audit log: who did what to which record, and when (read-only)
+app.use("/api/audit-logs", auditLogRoutes);
 
 // Organization configuration (enabled currencies and units)
 app.use("/api/configuration", configurationRoutes);

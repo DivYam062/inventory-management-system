@@ -8,6 +8,8 @@ const { INVENTORY_SOURCE } = require("../models/InventoryTransaction");
 const { increaseStock, undoIncrease } = require("../services/inventoryService");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const Product = require("../models/Product");
+const { logAudit, logStatusChange, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Putaways of the caller's organization. Every query is scoped by req.organizationId (taken from the token,
 // never from the request). Permissions: putaway:view to read, putaway:create to put goods away. There is no
@@ -273,6 +275,8 @@ const createPutaway = async (req, res) => {
     const sequence = await Counter.nextSequence(req.organizationId, "putaway");
     const putawayNumber = `PUT-${String(sequence).padStart(5, "0")}`;
 
+    const transactions = [];
+
     for (const item of items) {
       const transaction = await increaseStock({
         organizationId: req.organizationId,
@@ -284,6 +288,7 @@ const createPutaway = async (req, res) => {
         refNumber: putawayNumber,
         performedBy: req.user._id,
       });
+      transactions.push(transaction);
       undo.push(() => undoIncrease(transaction));
     }
 
@@ -302,8 +307,38 @@ const createPutaway = async (req, res) => {
 
     // The GRN is complete once all passed goods are away, otherwise partial.
     const fresh = await Grn.findById(grn._id);
+    const previousGrnStatus = fresh.status;
     fresh.status = fresh.items.every((item) => remainingOf(item) <= EPSILON) ? GRN_STATUS.PUTAWAY_COMPLETE : GRN_STATUS.PUTAWAY_PARTIAL;
     await fresh.save();
+
+    // The audit trail: the putaway itself, the GRN moving on, and the stock of every product that went up.
+    const totalQty = roundTo(items.reduce((sum, item) => sum + item.quantity, 0), 3);
+    await logAudit(req, {
+      entityType: AUDIT_ENTITY_TYPES.PUTAWAY,
+      entity: { id: putawayId, number: putawayNumber },
+      action: AUDIT_ACTIONS.CREATED,
+      summary: `Put away ${totalQty} (${items.length} item${items.length === 1 ? "" : "s"}) from ${grn.grnNumber} into inventory`,
+      meta: { grn: grn.grnNumber, totalQty },
+    });
+    await logStatusChange(req, {
+      entityType: AUDIT_ENTITY_TYPES.GRN,
+      entity: { id: grn._id, number: grn.grnNumber },
+      previousStatus: previousGrnStatus,
+      newStatus: fresh.status,
+      summary: `${grn.grnNumber} is now ${fresh.status.replace("_", " ")} (${putawayNumber})`,
+    });
+
+    const products = new Map((await Product.find({ _id: { $in: items.map((item) => item.productId) } }).select("name sku")).map((p) => [String(p._id), p]));
+    for (const transaction of transactions) {
+      const product = products.get(String(transaction.productId));
+      await logAudit(req, {
+        entityType: AUDIT_ENTITY_TYPES.INVENTORY,
+        entity: { id: transaction.productId, number: product ? `${product.name} (${product.sku})` : String(transaction.productId) },
+        action: AUDIT_ACTIONS.STOCK_INCREASED,
+        summary: `Stock +${transaction.changedQty} from ${putawayNumber} (${transaction.previousQty} → ${transaction.newQty})`,
+        meta: { previousQty: transaction.previousQty, changedQty: transaction.changedQty, newQty: transaction.newQty, putaway: putawayNumber },
+      });
+    }
 
     const saved = await loadPutaway(req, putawayId, { detailed: true });
     return sendSuccess(res, serializePutaway(saved, { detailed: true }), { status: 201 });

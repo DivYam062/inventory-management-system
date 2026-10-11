@@ -11,6 +11,7 @@ const { ENTITY_STATUS } = require("../config/constants");
 const { getConfiguration } = require("../services/configurationService");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
+const { logAudit, logStatusChange, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Gate entries of the caller's organization. Every query is scoped by req.organizationId (taken from the
 // token, never from the request). Permissions: gate-entry:view to read, :create to add, :edit to change or
@@ -218,6 +219,16 @@ const createGateEntry = async (req, res) => {
   });
 
   const saved = await loadEntry(req, entry._id, { detailed: true });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.GATE_ENTRY,
+    entity: { id: entry._id, number: entry.gateEntryNumber },
+    action: AUDIT_ACTIONS.CREATED,
+    newStatus: entry.status,
+    summary: `Recorded ${entry.gateEntryNumber} from ${saved.sellerId?.name ?? "the seller"}${order ? ` against ${order.poNumber}` : " (no purchase order)"}`,
+    meta: { source, purchaseOrder: order ? order.poNumber : null, vehicleNumber: entry.vehicleNumber, packages: entry.packages },
+  });
+
   return sendSuccess(res, serializeEntry(saved, { detailed: true }), { status: 201 });
 };
 
@@ -297,6 +308,16 @@ const updateGateEntry = async (req, res) => {
   await entry.save();
 
   const saved = await loadEntry(req, entry._id, { detailed: true });
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.GATE_ENTRY,
+    entity: { id: entry._id, number: entry.gateEntryNumber },
+    action: AUDIT_ACTIONS.UPDATED,
+    previousStatus: entry.status,
+    newStatus: entry.status,
+    summary: `Edited ${entry.gateEntryNumber}`,
+  });
+
   return sendSuccess(res, serializeEntry(saved, { detailed: true }));
 };
 
@@ -312,6 +333,15 @@ const cancelGateEntry = async (req, res) => {
   entry.status = GATE_ENTRY_STATUS.CANCELLED;
   entry.cancelledAt = new Date();
   await entry.save();
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.GATE_ENTRY,
+    entity: { id: entry._id, number: entry.gateEntryNumber },
+    action: AUDIT_ACTIONS.CANCELLED,
+    previousStatus: GATE_ENTRY_STATUS.PENDING,
+    newStatus: GATE_ENTRY_STATUS.CANCELLED,
+    summary: `Cancelled ${entry.gateEntryNumber}`,
+  });
 
   const saved = await loadEntry(req, entry._id, { detailed: true });
   return sendSuccess(res, serializeEntry(saved, { detailed: true }));

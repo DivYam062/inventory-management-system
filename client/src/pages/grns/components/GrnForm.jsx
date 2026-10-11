@@ -3,6 +3,7 @@ import { Plus, ScanBarcode, Trash2 } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
+import TabToggle from "../../../components/ui/TabToggle";
 import { RESTRICTIONS } from "../../../utils/inputRestrictions";
 import { DROPDOWN_PAGE_SIZE } from "../../../utils/dropdownLoaders";
 import { GRN_SOURCES } from "../../../utils/grnSources";
@@ -16,9 +17,9 @@ import { getErrorMessage } from "../../../utils/getErrorMessage";
 export const GRN_FORM_ID = "grn-form";
 
 const SOURCE_LABELS = {
-  [GRN_SOURCES.GATE_ENTRY]: "From a gate entry",
-  [GRN_SOURCES.PURCHASE_ORDER]: "From a purchase order",
-  [GRN_SOURCES.DIRECT]: "Directly from a seller",
+  [GRN_SOURCES.GATE_ENTRY]: "Gate Entry",
+  [GRN_SOURCES.PURCHASE_ORDER]: "Purchase Order",
+  [GRN_SOURCES.DIRECT]: "Seller & Supplier",
 };
 
 const roundTo3 = (value) => Math.round(value * 1000) / 1000;
@@ -363,29 +364,13 @@ const GrnForm = ({ sources, loadSellerOptions, loadSupplierOptions, onSubmit, ap
       )}
 
       {sources.length > 1 && (
-        <fieldset>
-          <legend className="mb-1 block text-sm font-medium text-gray-700">Goods come</legend>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {sources.map((source) => (
-              <label
-                key={source}
-                className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${
-                  values.source === source ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="source"
-                  value={source}
-                  checked={values.source === source}
-                  onChange={() => handleSourceChange(source)}
-                  className="h-4 w-4"
-                />
-                {SOURCE_LABELS[source]}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <TabToggle
+          label="Goods come from"
+          name="source"
+          options={sources.map((source) => ({ value: source, label: SOURCE_LABELS[source] }))}
+          value={values.source}
+          onChange={(event) => handleSourceChange(event.target.value)}
+        />
       )}
 
       {values.source === GRN_SOURCES.GATE_ENTRY && (

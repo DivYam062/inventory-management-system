@@ -12,6 +12,7 @@ const Grn = require("../models/Grn");
 const Putaway = require("../models/Putaway");
 const Inventory = require("../models/Inventory");
 const InventoryTransaction = require("../models/InventoryTransaction");
+const AuditLog = require("../models/AuditLog");
 const Counter = require("../models/Counter");
 const { ENTITY_STATUS, ROLE_TYPES } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
@@ -283,6 +284,7 @@ const deleteOrganizationData = async (organization) => {
   await Seller.deleteMany({ organizationId: organization._id });
   await Supplier.deleteMany({ organizationId: organization._id });
   await Configuration.deleteMany({ organizationId: organization._id });
+  await AuditLog.deleteMany({ organizationId: organization._id });
   await InventoryTransaction.deleteMany({ organizationId: organization._id });
   await Inventory.deleteMany({ organizationId: organization._id });
   await Putaway.deleteMany({ organizationId: organization._id });

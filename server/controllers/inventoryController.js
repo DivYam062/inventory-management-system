@@ -8,6 +8,7 @@ const { INVENTORY_SOURCE } = InventoryTransaction;
 const { increaseStock, decreaseStock } = require("../services/inventoryService");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter } = require("../utils/orgScope");
+const { logAudit, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } = require("../services/auditService");
 
 // Total inventory of the caller's organization: the current stock of every product that has been put away,
 // with manual increase / decrease and the full history of changes. Every query is scoped by req.organizationId
@@ -240,6 +241,14 @@ const adjustStock = async (req, res) => {
   }
 
   await transaction.populate("performedBy", "name");
+
+  await logAudit(req, {
+    entityType: AUDIT_ENTITY_TYPES.INVENTORY,
+    entity: { id: stock.product.id, number: `${stock.product.name} (${stock.product.sku})` },
+    action: type === "increase" ? AUDIT_ACTIONS.STOCK_INCREASED : AUDIT_ACTIONS.STOCK_DECREASED,
+    summary: `Stock ${type === "increase" ? "+" : "-"}${rounded} ${stock.product.unit} by hand (${transaction.previousQty} → ${transaction.newQty}): ${reason.trim()}`,
+    meta: { previousQty: transaction.previousQty, changedQty: transaction.changedQty, newQty: transaction.newQty, reason: reason.trim() },
+  });
 
   const updated = await findStock(req, req.params.productId);
   return sendSuccess(res, { stock: updated, transaction: serializeTransaction(transaction) });

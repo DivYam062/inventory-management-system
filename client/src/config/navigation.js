@@ -51,8 +51,8 @@ export const ORGANIZATION_NAVIGATION = [
     icon: Boxes,
     children: [
       {
-        name: "Total Inventory",
-        path: "/inventory/total-inventory",
+        name: "Stock Overview",
+        path: "/inventory/stock-overview",
         permission: ["inventory", "view"],
         description: "Current stock for every product, with manual increase and decrease adjustments.",
       },
@@ -89,6 +89,18 @@ export const ORGANIZATION_NAVIGATION = [
             description: "Move the passed items of a GRN into inventory.",
           },
         ],
+      },
+      {
+        name: "Stock Tracking",
+        path: "/inventory/stock-tracking",
+        permission: ["tracking", "view"],
+        description: "Where each purchase order has got to (Purchase Order, Gate Entry, GRN, Putaway) and what to do next.",
+      },
+      {
+        name: "Audit Log",
+        path: "/inventory/audit-log",
+        permission: ["audit-log", "view"],
+        description: "Who did what to which record, and when: purchase orders, gate entries, GRNs, putaways and stock changes.",
       },
     ],
   },

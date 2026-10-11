@@ -22,6 +22,15 @@ const DEFAULT_MODULES = { purchaseOrder: true, gateEntry: true, grn: true };
 // Purchase order settings from Configuration. While over-receiving is off, orders have no over-receiving choice.
 const DEFAULT_PURCHASE_ORDER_SETTINGS = { allowOverReceiving: false };
 
+// Re-reads the session context (permissions, module switches, organization details) so a change made elsewhere
+// - a role edited, a permission added, a module switched - shows up without a reload. Unlike fetchCurrentUser a
+// failure here changes nothing: a lost connection must not sign the user out (an expired token is handled by
+// the API layer's 401 handling).
+export const refreshCurrentUser = createAsyncThunk("auth/refreshCurrentUser", async () => {
+  const { data } = await getProfile();
+  return data;
+});
+
 const token = localStorage.getItem("token");
 
 const initialState = {
@@ -107,6 +116,9 @@ const authSlice = createSlice({
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
         clearSession(state);
+      })
+      .addCase(refreshCurrentUser.fulfilled, (state, action) => {
+        applyContext(state, action.payload);
       });
   },
 });
