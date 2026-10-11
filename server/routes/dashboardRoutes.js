@@ -1,16 +1,16 @@
 const express = require("express");
 
-const { getDashboardStats } = require("../controllers/dashboardController");
+const { getDashboard } = require("../controllers/dashboardController");
 
-const protect = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
+const authenticate = require("../middleware/authMiddleware");
+const { requireOrganization } = require("../middleware/permissionMiddleware");
 
 const router = express.Router();
 
-// All routes below require authentication
-router.use(protect);
+// The organization dashboard. Any organization user may open it; what it returns depends on the user's
+// permissions (only the sections the role may view) and on the organization's module switches.
+router.use(authenticate, requireOrganization);
 
-// Get dashboard statistics - Admin and Employee
-router.get("/", authorize(["admin", "employee"]), getDashboardStats);
+router.get("/", getDashboard);
 
 module.exports = router;

@@ -241,4 +241,4 @@ const getTrackerById = async (req, res) => {
   });
 };
 
-module.exports = { getTrackers, getSummary, getTrackerById };
+module.exports = { getTrackers, getSummary, getTrackerById, loadTrackers };

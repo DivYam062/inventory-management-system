@@ -20,6 +20,7 @@ const putawayRoutes = require("./routes/putawayRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const trackingRoutes = require("./routes/trackingRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -84,6 +85,9 @@ app.use("/api/inventory", inventoryRoutes);
 // Tracking: where each purchase order / delivery is in the flow and what to do next
 app.use("/api/tracking", trackingRoutes);
 
+// Organization dashboard (only the sections the caller's role may view)
+app.use("/api/dashboard", dashboardRoutes);
+
 // Audit log: who did what to which record, and when (read-only)
 app.use("/api/audit-logs", auditLogRoutes);
 
@@ -93,7 +97,7 @@ app.use("/api/configuration", configurationRoutes);
 // Reference lists: /api/currencies, /api/units
 app.use("/api", referenceRoutes);
 
-// NOTE: dashboard and settings routes were
+// NOTE: the old settings routes were
 // removed from the API in the authorization migration. They are rebuilt organization-scoped
 // and permission-protected in their own phases (see NEW_SYSTEM_FLOW.md).
 
