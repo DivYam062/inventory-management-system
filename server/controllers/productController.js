@@ -5,6 +5,7 @@ const Category = require("../models/Category");
 const Seller = require("../models/Seller");
 const PurchaseOrder = require("../models/PurchaseOrder");
 const Grn = require("../models/Grn");
+const Inventory = require("../models/Inventory");
 const { ENTITY_STATUS } = require("../config/constants");
 const { sendSuccess, buildMeta } = require("../utils/response");
 const { orgFilter, findByIdInOrg } = require("../utils/orgScope");
@@ -441,7 +442,11 @@ const deleteProduct = async (req, res) => {
   const product = await findByIdInOrg(Product, req, req.params.id);
   if (!product) return fail(res, 404, "Product not found");
 
-  // Inventory will need to be checked here when that module is built.
+  // A product with stock (or a stock history) is kept: its inventory records refer to it.
+  if (await Inventory.exists({ productId: product._id })) {
+    return fail(res, 400, "Cannot delete this product. It has stock in inventory.");
+  }
+
   const grnCount = await Grn.countDocuments({ "items.productId": product._id });
   if (grnCount > 0) {
     return fail(res, 400, `Cannot delete this product. It was received on ${grnCount} GRN${grnCount === 1 ? "" : "s"}.`);

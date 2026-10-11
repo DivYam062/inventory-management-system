@@ -16,6 +16,7 @@ const configurationRoutes = require("./routes/configurationRoutes");
 const purchaseOrderRoutes = require("./routes/purchaseOrderRoutes");
 const gateEntryRoutes = require("./routes/gateEntryRoutes");
 const grnRoutes = require("./routes/grnRoutes");
+const putawayRoutes = require("./routes/putawayRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -70,6 +71,9 @@ app.use("/api/gate-entries", gateEntryRoutes);
 
 // GRNs (closed while the module is switched off in Configuration)
 app.use("/api/grns", grnRoutes);
+
+// Putaways (passed GRN goods into inventory; closed while the GRN module is off)
+app.use("/api/putaways", putawayRoutes);
 
 // Organization configuration (enabled currencies and units)
 app.use("/api/configuration", configurationRoutes);

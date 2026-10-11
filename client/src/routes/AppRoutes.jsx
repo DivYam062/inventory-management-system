@@ -13,6 +13,7 @@ import Configuration from "../pages/settings/Configuration";
 import PurchaseOrders from "../pages/purchase-orders/PurchaseOrders";
 import GateEntries from "../pages/gate-entries/GateEntries";
 import Grns from "../pages/grns/Grns";
+import Putaway from "../pages/putaway/Putaway";
 import Sellers from "../pages/sellers/Sellers";
 import Suppliers from "../pages/suppliers/Suppliers";
 import ModulePlaceholder from "../pages/shared/ModulePlaceholder";
@@ -37,6 +38,7 @@ const ORGANIZATION_PAGES = {
   "/inventory/operations/purchase-orders": PurchaseOrders,
   "/inventory/operations/gate-entries": GateEntries,
   "/inventory/operations/grns": Grns,
+  "/inventory/operations/putaway": Putaway,
   "/seller/sellers": Sellers,
   "/seller/suppliers": Suppliers,
   "/settings/configuration": Configuration,
